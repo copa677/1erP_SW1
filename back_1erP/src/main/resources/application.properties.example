@@ -1,0 +1,13 @@
+spring.application.name=back_1erP
+
+# Security: Disable for now
+spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+
+# Performance: Enable Java 21 Virtual Threads
+spring.threads.virtual.enabled=true
+
+# JSON Naming: Use snake_case for APIs
+spring.jackson.property-naming-strategy=SNAKE_CASE
+
+# MongoDB Connection Configuration
+spring.data.mongodb.uri=${MONGO_URI}
