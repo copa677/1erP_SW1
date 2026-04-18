@@ -36,13 +36,18 @@
       <div id="paper-container" #paperContainer></div>
     </div>
 
-    <aside class="inspector-panel" *ngIf="selectedCell">
-      <h3>Propiedades de {{ selectedCell.get('type').split('.')[1] }}</h3>
+    <!-- Panel de Propiedades ajustado para Signals -->
+    <aside class="inspector-panel" *ngIf="selectedCell()">
+      <h3>Propiedades de {{ selectedCell()?.get('type')?.split('.')[1] || 'Elemento' }}</h3>
+      
       <div class="form-group">
         <label>Etiqueta</label>
-        <input type="text" [ngModel]="selectedCell.attr('label/text')" (ngModelChange)="updateLabel($event)">
+        <input type="text" 
+               [ngModel]="selectedCell()?.attr('label/text')" 
+               (ngModelChange)="updateLabel($event)">
       </div>
-      <div class="form-group" *ngIf="selectedCell.get('type') === 'standard.Rectangle'">
+
+      <div class="form-group" *ngIf="selectedCell()?.get('type') === 'standard.Rectangle'">
         <label>Formulario Asociado</label>
         <select>
           <option>Seleccionar formulario...</option>
@@ -51,6 +56,7 @@
           <option>Revisión Técnica</option>
         </select>
       </div>
+
       <div class="form-group">
         <label>Descripción / Política</label>
         <textarea rows="4" placeholder="Describa la política de negocio..."></textarea>

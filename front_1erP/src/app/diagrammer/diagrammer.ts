@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal, ChangeDetectionStrategy, NgZone, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as joint from 'jointjs';
@@ -8,36 +8,47 @@ import * as joint from 'jointjs';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './diagrammer.html',
-  styleUrl: './diagrammer.css'
+  styleUrl: './diagrammer.css',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DiagrammerComponent implements OnInit, AfterViewInit {
+export class DiagrammerComponent implements AfterViewInit, OnDestroy {
   @ViewChild('paperContainer') paperContainer!: ElementRef;
 
-  graph!: joint.dia.Graph;
-  paper!: joint.dia.Paper;
-  selectedCell: joint.dia.Cell | null = null;
-  
+  private graph!: joint.dia.Graph;
+  private paper!: joint.dia.Paper;
   private swimlanes: joint.shapes.standard.Rectangle[] = [];
-  private laneHeight = 200;
-  private laneWidth = 1000;
+  
+  // Usando Signals para cumplimiento de estándares
+  public selectedCell = signal<joint.dia.Cell | null>(null);
+  
+  private zone = inject(NgZone);
 
   constructor() {}
 
-  ngOnInit(): void {
-    this.graph = new joint.dia.Graph({}, { cellNamespace: joint.shapes });
+  ngAfterViewInit(): void {
+    // Ejecutar JointJS fuera de la zona de Angular para optimizar rendimiento
+    this.zone.runOutsideAngular(() => {
+      this.initializeDiagram();
+    });
   }
 
-  ngAfterViewInit(): void {
+  ngOnDestroy(): void {
+    if (this.paper) {
+      this.paper.remove();
+    }
+  }
+
+  private initializeDiagram(): void {
+    this.graph = new joint.dia.Graph({}, { cellNamespace: joint.shapes });
+
     this.paper = new joint.dia.Paper({
       el: this.paperContainer.nativeElement,
       model: this.graph,
       width: '100%',
       height: 800,
       gridSize: 10,
-      drawGrid: true,
-      background: {
-        color: '#f8fafc'
-      },
+      drawGrid: { name: 'dot', color: '#cbd5e1' },
+      background: { color: '#ffffff' },
       interactive: true,
       cellViewNamespace: joint.shapes,
       linkPinning: false,
@@ -56,18 +67,29 @@ export class DiagrammerComponent implements OnInit, AfterViewInit {
       })
     });
 
-    // Eventos de interacción
+    // Eventos de selección
     this.paper.on('cell:pointerdown', (cellView) => {
-      this.selectedCell = cellView.model;
+      // Usamos zone.run para actualizar el Signal y disparar detección de cambios
+      this.zone.run(() => {
+        this.selectedCell.set(cellView.model);
+      });
     });
 
     this.paper.on('blank:pointerdown', () => {
-      this.selectedCell = null;
+      this.zone.run(() => {
+        this.selectedCell.set(null);
+      });
     });
 
-    // Lógica de embedding automática
-    this.graph.on('change:position', (cell: joint.dia.Element, newPosition) => {
-      if (cell.get('type') === 'standard.Rectangle' && this.isSwimlane(cell)) return;
+    // Lógica de movimiento y embedding (Mejorada para evitar bloqueos)
+    this.graph.on('change:position', (cell: joint.dia.Element) => {
+      // 1. Ignorar si el elemento que se mueve es una calle
+      if (this.isSwimlane(cell)) return;
+
+      // 2. IMPORTANTE: Ignorar si el elemento tiene un padre que NO es una calle
+      // Esto evita bucles infinitos en elementos compuestos como el Nodo Final
+      const parent = cell.getParentCell();
+      if (parent && !this.isSwimlane(parent)) return;
 
       const area = cell.getBBox();
       const lane = this.swimlanes.find(l => l.getBBox().containsRect(area));
@@ -77,69 +99,52 @@ export class DiagrammerComponent implements OnInit, AfterViewInit {
           lane.embed(cell);
         }
       } else {
-        const currentParent = cell.getParentCell();
-        if (currentParent) {
-          currentParent.unembed(cell);
+        // Si estaba en una calle y ahora no, desembeber solo si el padre era la calle
+        if (parent && this.isSwimlane(parent)) {
+          parent.unembed(cell);
         }
       }
     });
 
-    // Inicializar con dos carriles de ejemplo
-    this.addSwimlane('Departamento de Ventas');
-    this.addSwimlane('Departamento de Finanzas');
+    // Ajustar scroll al mover elementos cerca del borde
+    this.graph.on('change:position', (cell: joint.dia.Element, post) => {
+        // Opcional: Implementar auto-expand del lienzo
+    });
   }
 
-  private isSwimlane(cell: joint.dia.Cell): boolean {
-    return cell.get('isSwimlane') === true;
-  }
-
-  addSwimlane(name: string = 'Nuevo Departamento'): void {
-    const yOffset = this.swimlanes.length * this.laneHeight;
-    
+  addSwimlane(): void {
     const lane = new joint.shapes.standard.Rectangle();
-    lane.position(50, 50 + yOffset);
-    lane.resize(this.laneWidth, this.laneHeight);
+    lane.position(50, 50 + (this.swimlanes.length * 200));
+    lane.resize(800, 200);
     lane.attr({
       body: {
-        fill: 'rgba(241, 245, 249, 0.3)',
+        fill: '#f8fafc',
         stroke: '#cbd5e1',
         strokeWidth: 2,
         strokeDasharray: '5,5'
       },
       label: {
-        text: name,
+        text: `Carril ${this.swimlanes.length + 1}`,
         fill: '#64748b',
         fontSize: 14,
         fontWeight: 'bold',
-        textVerticalAnchor: 'top',
-        textAnchor: 'start',
-        refX: 10,
-        refY: 10
+        refY: 10,
+        refY2: 0,
+        textVerticalAnchor: 'top'
       }
     });
-    lane.set('isSwimlane', true);
-    lane.addTo(this.graph);
-    this.swimlanes.push(lane);
     
-    // Mandar al fondo para que no tape otros elementos
-    lane.toBack();
+    lane.set('isSwimlane', true);
+    lane.set('z', -1); // Las calles siempre al fondo
+    this.swimlanes.push(lane);
+    this.graph.addCell(lane);
   }
 
-  addInitialNode(): void {
-    const node = new joint.shapes.standard.Circle();
-    node.position(100, 100);
-    node.resize(30, 30);
-    node.attr({
-      body: { fill: '#1e293b', stroke: 'none' }
-    });
-    node.addTo(this.graph);
-  }
-
-  addActivity(text: string = 'Nueva Actividad'): void {
-    const node = new joint.shapes.standard.Rectangle();
-    node.position(200, 100);
-    node.resize(150, 60);
-    node.attr({
+  addActivity(): void {
+    const rect = new joint.shapes.standard.Rectangle();
+    rect.position(100, 100);
+    rect.resize(150, 60);
+    rect.attr({
       body: {
         fill: '#ffffff',
         stroke: '#3b82f6',
@@ -148,19 +153,18 @@ export class DiagrammerComponent implements OnInit, AfterViewInit {
         ry: 10
       },
       label: {
-        text: text,
-        fill: '#1e293b',
-        fontSize: 12
+        text: 'Nueva Actividad',
+        fill: '#1e293b'
       }
     });
-    node.addTo(this.graph);
+    rect.addTo(this.graph);
   }
 
   addDecision(): void {
-    const node = new joint.shapes.standard.Polygon();
-    node.position(400, 100);
-    node.resize(60, 60);
-    node.attr({
+    const diamond = new joint.shapes.standard.Polygon();
+    diamond.position(300, 100);
+    diamond.resize(60, 60);
+    diamond.attr({
       body: {
         refPoints: '0,10 10,0 20,10 10,20',
         fill: '#ffffff',
@@ -168,10 +172,21 @@ export class DiagrammerComponent implements OnInit, AfterViewInit {
         strokeWidth: 2
       },
       label: {
-        text: '?',
+        text: '¿?',
+        fill: '#1e293b'
+      }
+    });
+    diamond.addTo(this.graph);
+  }
+
+  addInitialNode(): void {
+    const node = new joint.shapes.standard.Circle();
+    node.position(500, 100);
+    node.resize(30, 30);
+    node.attr({
+      body: {
         fill: '#1e293b',
-        fontSize: 14,
-        fontWeight: 'bold'
+        stroke: 'none'
       }
     });
     node.addTo(this.graph);
@@ -194,16 +209,23 @@ export class DiagrammerComponent implements OnInit, AfterViewInit {
     inner.attr({
       body: { fill: '#1e293b', stroke: 'none' }
     });
-    node.embed(inner);
-    inner.position(node.position().x + 5, node.position().y + 5);
     
+    // El posicionamiento de inner debe ser coordinado
     node.addTo(this.graph);
     inner.addTo(this.graph);
+    
+    node.embed(inner);
+    inner.position(node.position().x + 5, node.position().y + 5);
   }
 
   updateLabel(newText: string): void {
-    if (this.selectedCell) {
-      this.selectedCell.attr('label/text', newText);
+    const cell = this.selectedCell();
+    if (cell) {
+      cell.attr('label/text', newText);
     }
+  }
+
+  private isSwimlane(cell: joint.dia.Cell): boolean {
+    return cell.get('isSwimlane') === true;
   }
 }
