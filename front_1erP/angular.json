@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "front_1erP": {
+    "ejemplo1": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -25,6 +25,7 @@
               }
             ],
             "styles": [
+              "node_modules/jointjs/dist/joint.css",
               "src/styles.css"
             ]
           },
@@ -56,10 +57,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "front_1erP:build:production"
+              "buildTarget": "ejemplo1:build:production"
             },
             "development": {
-              "buildTarget": "front_1erP:build:development"
+              "buildTarget": "ejemplo1:build:development"
             }
           },
           "defaultConfiguration": "development"
