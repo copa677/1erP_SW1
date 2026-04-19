@@ -9,7 +9,11 @@
     </div>
     <div class="actions">
       <button class="btn-secondary" (click)="clearCanvas()">Limpiar Lienzo</button>
-      <button class="btn-primary">Guardar Proyecto</button>
+      <button class="btn-outline" (click)="fileInput.click()">
+        <input #fileInput type="file" (change)="onFileSelected($event)" accept=".json" style="display:none">
+        Cargar Proyecto
+      </button>
+      <button class="btn-primary" (click)="saveProject()">Guardar Proyecto</button>
     </div>
   </header>
 

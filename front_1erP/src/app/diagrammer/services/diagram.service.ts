@@ -44,7 +44,23 @@ export class DiagramService {
 
   public closeProperties() {
     this.showProperties.set(false);
-    // Nota: Mantenemos la selección para que el usuario vea qué editó
+  }
+
+  public exportJSON(): any {
+    return this.graph.toJSON();
+  }
+
+  public importJSON(data: any) {
+    this.zone.run(() => {
+      this.graph.fromJSON(data);
+      if (this.paper) {
+        // Resetear vista para que el nuevo diagrama sea visible
+        this.paper.scale(1, 1);
+        this.paper.translate(0, 0);
+        // Disparar un evento personalizado para que el CanvasComponent actualice su escala local
+        this.paper.trigger('view:reset');
+      }
+    });
   }
 
   public addElement(type: string, x: number, y: number) {

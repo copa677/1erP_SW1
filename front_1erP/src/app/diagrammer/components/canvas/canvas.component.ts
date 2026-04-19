@@ -134,6 +134,11 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
       })
     });
 
+    // Escuchar reseteos de vista desde el servicio
+    this.diagramService.paper.on('view:reset', () => {
+        this.currentScale = 1;
+    });
+
     // Clic izquierdo simple para herramientas rápidas (X y redimensionado)
     this.diagramService.paper.on('cell:pointerdown', (cellView: any, evt: any) => {
       if (evt.button === 0) {
@@ -185,11 +190,15 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   onDrop(event: DragEvent) {
     event.preventDefault();
     const type = event.dataTransfer?.getData('type');
-    if (type) {
-      const offset = this.paperElement.nativeElement.getBoundingClientRect();
-      const x = (event.clientX - offset.left - this.diagramService.paper.translate().tx) / this.currentScale;
-      const y = (event.clientY - offset.top - this.diagramService.paper.translate().ty) / this.currentScale;
-      this.zone.run(() => this.diagramService.addElement(type, x, y));
+    if (type && this.diagramService.paper) {
+      // Usar la función nativa de JointJS para convertir coordenadas de pantalla a locales del lienzo
+      // Esto maneja automáticamente el zoom y el paneo (translate)
+      const point = this.diagramService.paper.clientToLocalPoint({
+        x: event.clientX,
+        y: event.clientY
+      });
+      
+      this.zone.run(() => this.diagramService.addElement(type, point.x, point.y));
     }
   }
 }

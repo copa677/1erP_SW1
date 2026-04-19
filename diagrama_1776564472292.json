@@ -1,0 +1,582 @@
+{
+  "cells": [
+    {
+      "type": "standard.Rectangle",
+      "position": {
+        "x": 180,
+        "y": -10
+      },
+      "size": {
+        "width": 908.9027099609375,
+        "height": 599.9097290039062
+      },
+      "angle": 0,
+      "id": "462ccba7-b04d-462f-9938-44c7dceb8759",
+      "isSwimlane": true,
+      "z": -1,
+      "embeds": [
+        "80db46f8-d4b6-4181-bbc1-ef53897be5ee",
+        "b908fc8a-c794-4597-9de3-5f9852a242d1",
+        "91ae0209-6ddc-42af-90bc-f490177a4696",
+        "bb6dcc57-1052-4ddc-9dd2-36fba1bf8c75",
+        "cd34db20-1eae-4524-afea-3ab0472746e4"
+      ],
+      "attrs": {
+        "body": {
+          "stroke": "#cbd5e1",
+          "fill": "#f8fafc",
+          "strokeDasharray": "5,5"
+        },
+        "label": {
+          "textVerticalAnchor": "top",
+          "refY": 10,
+          "fill": "#64748b",
+          "text": "Carril",
+          "fontWeight": "bold"
+        }
+      }
+    },
+    {
+      "type": "standard.Rectangle",
+      "position": {
+        "x": 330,
+        "y": 220
+      },
+      "size": {
+        "width": 150,
+        "height": 60
+      },
+      "angle": 0,
+      "ports": {
+        "groups": {
+          "ports": {
+            "position": {
+              "name": "absolute"
+            },
+            "attrs": {
+              "circle": {
+                "r": 6,
+                "magnet": true,
+                "fill": "#3b82f6",
+                "stroke": "#ffffff",
+                "stroke-width": 2,
+                "fill-opacity": 0.5,
+                "stroke-opacity": 0.5
+              }
+            },
+            "markup": [
+              {
+                "tagName": "circle",
+                "selector": "circle"
+              }
+            ]
+          }
+        },
+        "items": [
+          {
+            "id": "top",
+            "group": "ports",
+            "args": {
+              "x": "50%",
+              "y": "0%"
+            }
+          },
+          {
+            "id": "bottom",
+            "group": "ports",
+            "args": {
+              "x": "50%",
+              "y": "100%"
+            }
+          },
+          {
+            "id": "left",
+            "group": "ports",
+            "args": {
+              "x": "0%",
+              "y": "50%"
+            }
+          },
+          {
+            "id": "right",
+            "group": "ports",
+            "args": {
+              "x": "100%",
+              "y": "50%"
+            }
+          }
+        ]
+      },
+      "id": "bb6dcc57-1052-4ddc-9dd2-36fba1bf8c75",
+      "z": 1,
+      "parent": "462ccba7-b04d-462f-9938-44c7dceb8759",
+      "attrs": {
+        "body": {
+          "stroke": "#3b82f6",
+          "fill": "#e2e8f0",
+          "rx": 10,
+          "ry": 10
+        },
+        "label": {
+          "fill": "#1e293b",
+          "text": "Actividad"
+        }
+      }
+    },
+    {
+      "type": "standard.Circle",
+      "position": {
+        "x": 390,
+        "y": 20
+      },
+      "size": {
+        "width": 30,
+        "height": 30
+      },
+      "angle": 0,
+      "ports": {
+        "groups": {
+          "ports": {
+            "position": {
+              "name": "absolute"
+            },
+            "attrs": {
+              "circle": {
+                "r": 6,
+                "magnet": true,
+                "fill": "#3b82f6",
+                "stroke": "#ffffff",
+                "stroke-width": 2,
+                "fill-opacity": 0.5,
+                "stroke-opacity": 0.5
+              }
+            },
+            "markup": [
+              {
+                "tagName": "circle",
+                "selector": "circle"
+              }
+            ]
+          }
+        },
+        "items": [
+          {
+            "id": "top",
+            "group": "ports",
+            "args": {
+              "x": "50%",
+              "y": "0%"
+            }
+          },
+          {
+            "id": "bottom",
+            "group": "ports",
+            "args": {
+              "x": "50%",
+              "y": "100%"
+            }
+          },
+          {
+            "id": "left",
+            "group": "ports",
+            "args": {
+              "x": "0%",
+              "y": "50%"
+            }
+          },
+          {
+            "id": "right",
+            "group": "ports",
+            "args": {
+              "x": "100%",
+              "y": "50%"
+            }
+          }
+        ]
+      },
+      "id": "cd34db20-1eae-4524-afea-3ab0472746e4",
+      "z": 2,
+      "parent": "462ccba7-b04d-462f-9938-44c7dceb8759",
+      "attrs": {
+        "body": {
+          "stroke": "none",
+          "fill": "#1e293b"
+        }
+      }
+    },
+    {
+      "type": "standard.Link",
+      "source": {
+        "id": "cd34db20-1eae-4524-afea-3ab0472746e4",
+        "magnet": "circle",
+        "port": "bottom"
+      },
+      "target": {
+        "id": "bb6dcc57-1052-4ddc-9dd2-36fba1bf8c75",
+        "magnet": "circle",
+        "port": "top"
+      },
+      "id": "4fddc5c6-92b5-4a27-93bf-e4196a49fe2d",
+      "z": 3,
+      "attrs": {
+        "line": {
+          "stroke": "#64748b",
+          "targetMarker": {
+            "d": "M 10 -5 0 0 10 5 Z"
+          }
+        }
+      }
+    },
+    {
+      "type": "uml.FinalNode",
+      "markup": [
+        {
+          "tagName": "circle",
+          "selector": "body"
+        },
+        {
+          "tagName": "circle",
+          "selector": "inner"
+        }
+      ],
+      "position": {
+        "x": 650,
+        "y": 530
+      },
+      "size": {
+        "width": 30,
+        "height": 30
+      },
+      "angle": 0,
+      "ports": {
+        "groups": {
+          "ports": {
+            "position": {
+              "name": "absolute"
+            },
+            "attrs": {
+              "circle": {
+                "r": 6,
+                "magnet": true,
+                "fill": "#3b82f6",
+                "stroke": "#ffffff",
+                "stroke-width": 2,
+                "fill-opacity": 0.5,
+                "stroke-opacity": 0.5
+              }
+            },
+            "markup": [
+              {
+                "tagName": "circle",
+                "selector": "circle"
+              }
+            ]
+          }
+        },
+        "items": [
+          {
+            "id": "top",
+            "group": "ports",
+            "args": {
+              "x": "50%",
+              "y": "0%"
+            }
+          },
+          {
+            "id": "bottom",
+            "group": "ports",
+            "args": {
+              "x": "50%",
+              "y": "100%"
+            }
+          },
+          {
+            "id": "left",
+            "group": "ports",
+            "args": {
+              "x": "0%",
+              "y": "50%"
+            }
+          },
+          {
+            "id": "right",
+            "group": "ports",
+            "args": {
+              "x": "100%",
+              "y": "50%"
+            }
+          }
+        ]
+      },
+      "id": "91ae0209-6ddc-42af-90bc-f490177a4696",
+      "z": 4,
+      "parent": "462ccba7-b04d-462f-9938-44c7dceb8759",
+      "attrs": {}
+    },
+    {
+      "type": "standard.Polygon",
+      "position": {
+        "x": 590,
+        "y": 220
+      },
+      "size": {
+        "width": 60,
+        "height": 60
+      },
+      "angle": 0,
+      "ports": {
+        "groups": {
+          "ports": {
+            "position": {
+              "name": "absolute"
+            },
+            "attrs": {
+              "circle": {
+                "r": 6,
+                "magnet": true,
+                "fill": "#3b82f6",
+                "stroke": "#ffffff",
+                "stroke-width": 2,
+                "fill-opacity": 0.5,
+                "stroke-opacity": 0.5
+              }
+            },
+            "markup": [
+              {
+                "tagName": "circle",
+                "selector": "circle"
+              }
+            ]
+          }
+        },
+        "items": [
+          {
+            "id": "top",
+            "group": "ports",
+            "args": {
+              "x": "50%",
+              "y": "0%"
+            }
+          },
+          {
+            "id": "bottom",
+            "group": "ports",
+            "args": {
+              "x": "50%",
+              "y": "100%"
+            }
+          },
+          {
+            "id": "left",
+            "group": "ports",
+            "args": {
+              "x": "0%",
+              "y": "50%"
+            }
+          },
+          {
+            "id": "right",
+            "group": "ports",
+            "args": {
+              "x": "100%",
+              "y": "50%"
+            }
+          }
+        ]
+      },
+      "id": "b908fc8a-c794-4597-9de3-5f9852a242d1",
+      "z": 5,
+      "parent": "462ccba7-b04d-462f-9938-44c7dceb8759",
+      "attrs": {
+        "body": {
+          "refPoints": "0,10 10,0 20,10 10,20",
+          "stroke": "#f59e0b",
+          "fill": "#fef3c7"
+        },
+        "label": {
+          "fill": "#1e293b",
+          "text": "¿?"
+        }
+      }
+    },
+    {
+      "type": "standard.Rectangle",
+      "position": {
+        "x": 870,
+        "y": 340
+      },
+      "size": {
+        "width": 150,
+        "height": 60
+      },
+      "angle": 0,
+      "ports": {
+        "groups": {
+          "ports": {
+            "position": {
+              "name": "absolute"
+            },
+            "attrs": {
+              "circle": {
+                "r": 6,
+                "magnet": true,
+                "fill": "#3b82f6",
+                "stroke": "#ffffff",
+                "stroke-width": 2,
+                "fill-opacity": 0.5,
+                "stroke-opacity": 0.5
+              }
+            },
+            "markup": [
+              {
+                "tagName": "circle",
+                "selector": "circle"
+              }
+            ]
+          }
+        },
+        "items": [
+          {
+            "id": "top",
+            "group": "ports",
+            "args": {
+              "x": "50%",
+              "y": "0%"
+            }
+          },
+          {
+            "id": "bottom",
+            "group": "ports",
+            "args": {
+              "x": "50%",
+              "y": "100%"
+            }
+          },
+          {
+            "id": "left",
+            "group": "ports",
+            "args": {
+              "x": "0%",
+              "y": "50%"
+            }
+          },
+          {
+            "id": "right",
+            "group": "ports",
+            "args": {
+              "x": "100%",
+              "y": "50%"
+            }
+          }
+        ]
+      },
+      "id": "80db46f8-d4b6-4181-bbc1-ef53897be5ee",
+      "z": 6,
+      "parent": "462ccba7-b04d-462f-9938-44c7dceb8759",
+      "attrs": {
+        "body": {
+          "stroke": "#3b82f6",
+          "fill": "#e2e8f0",
+          "rx": 10,
+          "ry": 10
+        },
+        "label": {
+          "fill": "#1e293b",
+          "text": "Actividad"
+        }
+      }
+    },
+    {
+      "type": "standard.Link",
+      "source": {
+        "id": "b908fc8a-c794-4597-9de3-5f9852a242d1",
+        "magnet": "circle",
+        "port": "bottom"
+      },
+      "target": {
+        "id": "91ae0209-6ddc-42af-90bc-f490177a4696",
+        "magnet": "circle",
+        "port": "left"
+      },
+      "id": "08708329-765a-4be3-9a40-9a267f74b04d",
+      "z": 7,
+      "attrs": {
+        "line": {
+          "stroke": "#64748b",
+          "targetMarker": {
+            "d": "M 10 -5 0 0 10 5 Z"
+          }
+        }
+      }
+    },
+    {
+      "type": "standard.Link",
+      "source": {
+        "id": "bb6dcc57-1052-4ddc-9dd2-36fba1bf8c75",
+        "magnet": "circle",
+        "port": "right"
+      },
+      "target": {
+        "id": "b908fc8a-c794-4597-9de3-5f9852a242d1",
+        "magnet": "circle",
+        "port": "left"
+      },
+      "id": "e9d8dbe2-9f35-4646-944e-3b1b0885d60a",
+      "z": 8,
+      "attrs": {
+        "line": {
+          "stroke": "#64748b",
+          "targetMarker": {
+            "d": "M 10 -5 0 0 10 5 Z"
+          }
+        }
+      }
+    },
+    {
+      "type": "standard.Link",
+      "source": {
+        "id": "b908fc8a-c794-4597-9de3-5f9852a242d1",
+        "magnet": "circle",
+        "port": "right"
+      },
+      "target": {
+        "id": "80db46f8-d4b6-4181-bbc1-ef53897be5ee",
+        "magnet": "circle",
+        "port": "top"
+      },
+      "id": "93e5b27f-dfed-4787-b184-55a7f7b51792",
+      "z": 9,
+      "attrs": {
+        "line": {
+          "stroke": "#64748b",
+          "targetMarker": {
+            "d": "M 10 -5 0 0 10 5 Z"
+          }
+        }
+      }
+    },
+    {
+      "type": "standard.Link",
+      "source": {
+        "id": "80db46f8-d4b6-4181-bbc1-ef53897be5ee",
+        "magnet": "circle",
+        "port": "bottom"
+      },
+      "target": {
+        "id": "91ae0209-6ddc-42af-90bc-f490177a4696",
+        "magnet": "circle",
+        "port": "right"
+      },
+      "id": "0df1819d-d59a-4e5f-a688-7c92ea794921",
+      "z": 10,
+      "attrs": {
+        "line": {
+          "stroke": "#64748b",
+          "targetMarker": {
+            "d": "M 10 -5 0 0 10 5 Z"
+          }
+        }
+      }
+    }
+  ]
+}
