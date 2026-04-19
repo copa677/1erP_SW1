@@ -24,7 +24,6 @@ export class DiagramService {
       }
 
       this.selectedCell.set(cell);
-      this.showProperties.set(cell !== null);
 
       if (cell && cell.findView(this.paper)) {
         const view = cell.findView(this.paper);
@@ -37,8 +36,15 @@ export class DiagramService {
     });
   }
 
+  public openProperties() {
+    if (this.selectedCell()) {
+      this.showProperties.set(true);
+    }
+  }
+
   public closeProperties() {
-    this.selectCell(null);
+    this.showProperties.set(false);
+    // Nota: Mantenemos la selección para que el usuario vea qué editó
   }
 
   public addElement(type: string, x: number, y: number) {
@@ -87,6 +93,24 @@ export class DiagramService {
         element = new UMLShapes.uml.FinalNode({
             ...commonProps,
             size: { width: 30, height: 30 }
+        });
+        break;
+      case 'fork':
+      case 'join':
+        const isFork = type === 'fork';
+        element = new UMLShapes.uml.ForkJoinNode({
+          ...commonProps,
+          size: isFork ? { width: 120, height: 8 } : { width: 8, height: 120 },
+          ports: {
+            groups: portConfig.groups,
+            items: [
+              { id: 'p1', group: 'ports', args: isFork ? { x: '10%', y: '50%' } : { x: '50%', y: '10%' } },
+              { id: 'p2', group: 'ports', args: isFork ? { x: '30%', y: '50%' } : { x: '50%', y: '30%' } },
+              { id: 'p3', group: 'ports', args: isFork ? { x: '50%', y: '50%' } : { x: '50%', y: '50%' } },
+              { id: 'p4', group: 'ports', args: isFork ? { x: '70%', y: '50%' } : { x: '50%', y: '70%' } },
+              { id: 'p5', group: 'ports', args: isFork ? { x: '90%', y: '50%' } : { x: '50%', y: '90%' } }
+            ]
+          }
         });
         break;
       case 'swimlane':

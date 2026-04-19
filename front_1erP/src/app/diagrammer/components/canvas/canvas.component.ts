@@ -64,20 +64,6 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
               return;
           }
 
-          // SEGUIMIENTO DE DOBLE CLIC (Botón izquierdo)
-          if (evt.button === 0) {
-              const now = Date.now();
-              if (now - this.lastClickTime < this.clickThreshold) {
-                  const localPoint = this.diagramService.paper.clientToLocalPoint({ x: evt.clientX, y: evt.clientY });
-                  const cell = this.diagramService.graph.findModelsFromPoint(localPoint)[0];
-                  if (cell) {
-                      this.zone.run(() => {
-                          this.diagramService.selectCell(cell);
-                      });
-                  }
-              }
-              this.lastClickTime = now;
-          }
       });
 
       // 2. MOVIMIENTO GLOBAL
@@ -149,15 +135,26 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     });
 
     // Clic izquierdo simple para herramientas rápidas (X y redimensionado)
-    this.diagramService.paper.on('cell:pointerdown', (cellView, evt) => {
+    this.diagramService.paper.on('cell:pointerdown', (cellView: any, evt: any) => {
       if (evt.button === 0) {
-        this.zone.run(() => {
-          this.diagramService.selectCell(cellView.model);
-        });
+        // Detección de Doble Clic (Clic izquierdo)
+        const now = Date.now();
+        if (now - this.lastClickTime < this.clickThreshold) {
+            this.zone.run(() => {
+                this.diagramService.selectCell(cellView.model);
+                this.diagramService.openProperties();
+            });
+        } else {
+            // Clic simple solo selecciona
+            this.zone.run(() => {
+                this.diagramService.selectCell(cellView.model);
+            });
+        }
+        this.lastClickTime = now;
       }
     });
 
-    this.diagramService.paper.on('blank:pointerdown', (evt) => {
+    this.diagramService.paper.on('blank:pointerdown', (evt: any) => {
       if (evt.button === 0) {
         this.zone.run(() => {
           this.diagramService.closeProperties();

@@ -34,6 +34,20 @@
     </div>
 
     <div class="group">
+      <div class="group-header">Flujo Paralelo</div>
+      <div class="items-grid">
+        <div class="tool-item" draggable="true" (dragstart)="onDragStart($event, 'fork')">
+          <div class="icon fork"></div>
+          <span>Fork (Horiz.)</span>
+        </div>
+        <div class="tool-item" draggable="true" (dragstart)="onDragStart($event, 'join')">
+          <div class="icon join"></div>
+          <span>Join (Vert.)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
       <div class="group-header">Layout / Contenedores</div>
       <div class="items-grid">
         <div class="tool-item full" draggable="true" (dragstart)="onDragStart($event, 'swimlane')">

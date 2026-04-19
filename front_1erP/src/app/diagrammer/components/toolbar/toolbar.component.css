@@ -91,6 +91,17 @@
   height: 20px;
   border-color: #94a3b8;
 }
+.icon.fork {
+  height: 8px;
+  background: #1e293b;
+  border: none;
+  margin-top: 10px;
+}
+.icon.join {
+  width: 8px;
+  background: #1e293b;
+  border: none;
+}
 .footer-tips {
   margin-top: 2rem;
   padding: 1rem;

@@ -58,8 +58,22 @@ export const FinalNode = joint.dia.Element.define('uml.FinalNode', {
     }]
 });
 
+// Nodo Fork/Join (Barra de Paralelismo)
+export const ForkJoinNode = joint.shapes.standard.Rectangle.define('uml.ForkJoinNode', {
+    attrs: {
+        body: {
+            fill: '#1e293b',
+            stroke: 'none',
+            rx: 0, ry: 0
+        },
+        label: {
+            visibility: 'hidden'
+        }
+    }
+});
+
 // Registro de namespace (Comentado para evitar error de solo lectura en ESM)
-// (joint.shapes as any).uml = { FinalNode };
+// (joint.shapes as any).uml = { FinalNode, ForkJoinNode };
 
 // Herramienta de Redimensionado Personalizada
 export const ResizeTool = joint.elementTools.Control.extend({
@@ -112,6 +126,7 @@ export function createLinkTools() {
 
 export const UMLShapes = {
     uml: {
-        FinalNode
+        FinalNode,
+        ForkJoinNode
     }
 };
