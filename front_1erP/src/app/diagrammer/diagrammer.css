@@ -1,146 +1,123 @@
-.diagrammer-container {
+.diagrammer-layout {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  width: 100%;
-  font-family: 'Inter', sans-serif;
-  background-color: #f8fafc;
+  width: 100vw;
+  overflow: hidden;
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #f8fafc;
 }
 
 .header {
-  padding: 1rem 2rem;
+  height: 64px;
   background: white;
   border-bottom: 1px solid #e2e8f0;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  z-index: 10;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-.header h1 {
-  font-size: 1.25rem;
-  font-weight: 600;
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo {
+  font-size: 1.5rem;
+  color: #3b82f6;
+  font-weight: bold;
+}
+
+.brand h1 {
+  font-size: 1.125rem;
+  font-weight: 700;
   color: #1e293b;
   margin: 0;
 }
 
-.main-content {
+.stats {
+  font-size: 0.875rem;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.main-body {
   display: flex;
   flex: 1;
   overflow: hidden;
+  position: relative;
 }
 
-.toolbar {
-  width: 250px;
+.toolbar-wrapper {
+  width: 260px;
+  flex-shrink: 0;
+  z-index: 5;
   background: white;
   border-right: 1px solid #e2e8f0;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  overflow-y: auto;
 }
 
-.toolbar-section h3 {
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #64748b;
-  margin-bottom: 1rem;
-}
-
-.tools-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
-}
-
-.tool-button {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.875rem;
-  color: #334155;
-  text-align: left;
-}
-
-.tool-button:hover {
-  background: #e2e8f0;
-  border-color: #cbd5e1;
-  transform: translateY(-1px);
-}
-
-.tool-icon {
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: white;
-  border-radius: 0.25rem;
-  font-weight: bold;
-}
-
-.canvas-area {
+.canvas-wrapper {
   flex: 1;
   position: relative;
-  background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
-  background-size: 20px 20px;
-  overflow: auto;
+  z-index: 1;
 }
 
-#paper-container {
-  min-width: 100%;
-  min-height: 100%;
-}
-
-.inspector-panel {
-  width: 300px;
+.properties-wrapper {
+  width: 0;
+  flex-shrink: 0;
   background: white;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  z-index: 5;
+  box-shadow: -1px 0 5px rgba(0,0,0,0.05);
+}
+
+.properties-wrapper.expanded {
+  width: 350px;
   border-left: 1px solid #e2e8f0;
-  padding: 1.5rem;
-  box-shadow: -2px 0 10px rgba(0,0,0,0.02);
 }
 
-.inspector-panel h3 {
-  font-size: 1rem;
-  margin-bottom: 1rem;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-.form-group label {
+.properties-wrapper app-properties {
+  min-width: 350px;
   display: block;
-  font-size: 0.75rem;
-  color: #64748b;
-  margin-bottom: 0.25rem;
-}
-
-.form-group input, .form-group textarea {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
 }
 
 .btn-primary {
-  background-color: #3b82f6;
+  background: #3b82f6;
   color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
   border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
   cursor: pointer;
-  font-weight: 500;
+  transition: background 0.2s;
 }
 
 .btn-primary:hover {
-  background-color: #2563eb;
+  background: #2563eb;
+}
+
+.btn-secondary {
+  background: white;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: #f8fafc;
 }

@@ -1,66 +1,30 @@
-<div class="diagrammer-container">
+<div class="diagrammer-layout">
   <header class="header">
-    <h1>Diagramador de Actividades UML 2.5</h1>
+    <div class="brand">
+      <span class="logo">◈</span>
+      <h1>UML Architect 2.5</h1>
+    </div>
+    <div class="stats">
+       <span>Elementos: {{ elementCount }}</span>
+    </div>
     <div class="actions">
-      <button class="btn-primary" (click)="addSwimlane()">+ Añadir Carril</button>
+      <button class="btn-secondary" (click)="clearCanvas()">Limpiar Lienzo</button>
+      <button class="btn-primary">Guardar Proyecto</button>
     </div>
   </header>
 
-  <main class="main-content">
-    <aside class="toolbar">
-      <section class="toolbar-section">
-        <h3>Nodos UML</h3>
-        <div class="tools-grid">
-          <button class="tool-button" (click)="addInitialNode()">
-            <span class="tool-icon">●</span> Inicio
-          </button>
-          <button class="tool-button" (click)="addActivity()">
-            <span class="tool-icon">⬚</span> Actividad
-          </button>
-          <button class="tool-button" (click)="addDecision()">
-            <span class="tool-icon">◆</span> Decisión
-          </button>
-          <button class="tool-button" (click)="addFinalNode()">
-            <span class="tool-icon">◎</span> Fin
-          </button>
-        </div>
-      </section>
-
-      <section class="toolbar-section">
-        <h3>Flujos</h3>
-        <p style="font-size: 0.75rem; color: #64748b;">Arrastra desde un elemento a otro para conectar.</p>
-      </section>
-    </aside>
-
-    <div class="canvas-area">
-      <div id="paper-container" #paperContainer></div>
+  <main class="main-body">
+    <div class="toolbar-wrapper">
+      <app-toolbar></app-toolbar>
+    </div>
+    
+    <div class="canvas-wrapper">
+      <app-canvas></app-canvas>
     </div>
 
-    <!-- Panel de Propiedades ajustado para Signals -->
-    <aside class="inspector-panel" *ngIf="selectedCell()">
-      <h3>Propiedades de {{ selectedCell()?.get('type')?.split('.')[1] || 'Elemento' }}</h3>
-      
-      <div class="form-group">
-        <label>Etiqueta</label>
-        <input type="text" 
-               [ngModel]="selectedCell()?.attr('label/text')" 
-               (ngModelChange)="updateLabel($event)">
-      </div>
-
-      <div class="form-group" *ngIf="selectedCell()?.get('type') === 'standard.Rectangle'">
-        <label>Formulario Asociado</label>
-        <select>
-          <option>Seleccionar formulario...</option>
-          <option>Formulario de Ingreso</option>
-          <option>Aprobación de Gasto</option>
-          <option>Revisión Técnica</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Descripción / Política</label>
-        <textarea rows="4" placeholder="Describa la política de negocio..."></textarea>
-      </div>
-    </aside>
+    <!-- Panel lateral con transición mejorada -->
+    <div class="properties-wrapper" [class.expanded]="diagramService.showProperties()">
+      <app-properties></app-properties>
+    </div>
   </main>
 </div>

@@ -1,0 +1,12 @@
+<div class="canvas-container" 
+     #canvasContainer
+     (dragover)="onDragOver($event)" 
+     (drop)="onDrop($event)"
+     (contextmenu)="onContextMenu($event)">
+  <div id="paper-element" #paperElement></div>
+  
+  <!-- Indicador visual de modo paneo -->
+  <div class="pan-indicator" *ngIf="isPanning">
+      🖱️ Moviendo Pizarra...
+  </div>
+</div>

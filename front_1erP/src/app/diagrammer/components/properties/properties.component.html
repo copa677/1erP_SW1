@@ -1,0 +1,49 @@
+<aside class="properties-panel" *ngIf="diagramService.showProperties()">
+  <div class="header">
+    <h3>Propiedades</h3>
+    <button class="close-btn" (click)="diagramService.closeProperties()">×</button>
+  </div>
+
+  <div class="content" *ngIf="diagramService.selectedCell() as cell">
+    <div class="type-badge">{{ cell.get('type').split('.')[1] || 'Elemento' }}</div>
+    
+    <div class="form-group">
+      <label>Identificador</label>
+      <input type="text" [value]="cell.id" disabled class="disabled-input">
+    </div>
+
+    <div class="form-group">
+      <label>Nombre / Etiqueta</label>
+      <input type="text" 
+             [ngModel]="cell.attr('label/text')" 
+             (ngModelChange)="onLabelChange($event)"
+             placeholder="Ej: Procesar pedido">
+    </div>
+
+    <div class="form-group" *ngIf="cell.get('type') === 'standard.Rectangle' && !cell.get('isSwimlane')">
+      <label>Formulario Asociado</label>
+      <select class="select-input">
+        <option value="">Seleccionar formulario...</option>
+        <option>Formulario de Ingreso</option>
+        <option>Aprobación de Gasto</option>
+        <option>Revisión Técnica</option>
+      </select>
+    </div>
+
+    <div class="form-group" *ngIf="cell.get('isSwimlane')">
+      <label>Color de Carril</label>
+      <input type="color" 
+             [ngModel]="cell.attr('body/fill')" 
+             (ngModelChange)="onColorChange($event)">
+    </div>
+
+    <div class="form-group">
+      <label>Descripción / Política de Negocio</label>
+      <textarea rows="4" placeholder="Describa la lógica o regla de negocio aquí..."></textarea>
+    </div>
+
+    <div class="actions">
+       <button class="btn-delete" (click)="deleteElement()">Eliminar Elemento</button>
+    </div>
+  </div>
+</aside>
