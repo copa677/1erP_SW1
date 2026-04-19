@@ -12,20 +12,16 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import java.util.Collections;
 
 @Configuration
+@EnableMongoAuditing
 public class ApplicationConfig {
 
     @Bean
     public UserDetailsService userDetailsService(UserRepository userRepository) {
         return username -> userRepository.findByCorreo(username)
-                .map(u -> org.springframework.security.core.userdetails.User.builder()
-                        .username(u.getCorreo())
-                        .password(u.getPassword())
-                        .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + u.getRol().name())))
-                        .disabled(!u.isActivo())
-                        .build())
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
     }
 

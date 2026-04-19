@@ -1,20 +1,48 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
 import { CanvasComponent } from './components/canvas/canvas.component';
 import { PropertiesComponent } from './components/properties/properties.component';
 import { DiagramService } from './services/diagram.service';
+import { ProjectService } from '../services/project.service';
+import { Project } from '../interfaces/project.interface';
 
 @Component({
   selector: 'app-diagrammer',
   standalone: true,
-  imports: [CommonModule, ToolbarComponent, CanvasComponent, PropertiesComponent],
+  imports: [CommonModule, ToolbarComponent, CanvasComponent, PropertiesComponent, RouterModule],
   templateUrl: './diagrammer.html',
-  styleUrl: './diagrammer.css',
-  // Con Signals y Angular moderno, la detección Default es suficiente y más segura
+  styleUrl: './diagrammer.css'
 })
-export class DiagrammerComponent {
+export class DiagrammerComponent implements OnInit {
   public diagramService = inject(DiagramService);
+  private projectService = inject(ProjectService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+
+  currentProject?: Project;
+
+  ngOnInit() {
+    this.route.params.subscribe(params => {
+      const id = params['id'];
+      this.projectService.getProjectById(id).subscribe({
+        next: (project) => {
+          this.currentProject = project;
+          if (project.data) {
+            // Pequeño delay para asegurar que el canvas esté inicializado
+            setTimeout(() => {
+              this.diagramService.importJSON(project.data);
+            }, 100);
+          }
+        },
+        error: (err) => {
+          console.error('Error loading project', err);
+          this.router.navigate(['/dashboard']);
+        }
+      });
+    });
+  }
 
   get elementCount() {
     return this.diagramService.graph.getCells().length;
@@ -28,15 +56,36 @@ export class DiagrammerComponent {
   }
 
   saveProject() {
+    if (this.currentProject && this.currentProject.id) {
+      const data = this.diagramService.exportJSON();
+      
+      const updatedProject: Project = {
+        ...this.currentProject,
+        data: data,
+        elementCount: this.elementCount
+      };
+
+      this.projectService.updateProject(this.currentProject.id, updatedProject).subscribe({
+        next: (saved) => {
+          this.currentProject = saved;
+          alert('Proyecto guardado correctamente en el servidor');
+        },
+        error: (err) => {
+          console.error('Error saving project', err);
+          alert('Error al guardar el proyecto en el servidor');
+        }
+      });
+    }
+  }
+
+  downloadJSON() {
     const data = this.diagramService.exportJSON();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = window.URL.createObjectURL(blob);
-    
     const link = document.createElement('a');
     link.href = url;
-    link.download = `diagrama_${new Date().getTime()}.json`;
+    link.download = `${this.currentProject?.name || 'diagrama'}.json`;
     link.click();
-    
     window.URL.revokeObjectURL(url);
   }
 

@@ -38,7 +38,62 @@
 
       <div class="form-group">
         <label>Descripción / Regla de Negocio</label>
-        <textarea rows="4" placeholder="Describa la lógica detallada aquí..."></textarea>
+        <textarea rows="3" placeholder="Describa la lógica detallada aquí..."></textarea>
+      </div>
+
+      <!-- Sección de Acción de Negocio -->
+      <div class="business-action-section" *ngIf="!cell.isLink() && !cell.get('isSwimlane')">
+        <h4 class="section-title">Vinculación de Proceso</h4>
+        
+        <div class="form-group">
+          <label>Tipo de Acción</label>
+          <select [ngModel]="getActionType()" (ngModelChange)="onActionTypeChange($event)" class="select-input">
+            <option value="none">Sin acción externa</option>
+            <option value="form">📝 Formulario de Datos</option>
+            <option value="signature">✍️ Firma Digital</option>
+            <option value="sello">🏷️ Sello Oficial</option>
+          </select>
+        </div>
+
+        <!-- Constructor de Formulario -->
+        <div class="form-builder-container" *ngIf="getActionType() === 'form'">
+          <div class="builder-header">
+            <h5 class="builder-title">Configuración de Campos</h5>
+            <button class="btn-add-field" (click)="addFormField()">
+              <span>➕</span> Añadir Campo
+            </button>
+          </div>
+
+          <div class="fields-list">
+            <div class="field-item" *ngFor="let field of getFormFields(); let i = index">
+              <div class="field-row">
+                <input type="text" 
+                       [(ngModel)]="field.label" 
+                       (ngModelChange)="onFieldChange()"
+                       placeholder="Etiqueta del campo" 
+                       class="field-input">
+                <button class="btn-remove-field" (click)="removeFormField(i)">✕</button>
+              </div>
+              <div class="field-row-secondary">
+                <select [(ngModel)]="field.type" (ngModelChange)="onFieldChange()" class="field-select">
+                  <option value="text">Texto</option>
+                  <option value="number">Número</option>
+                  <option value="date">Fecha</option>
+                  <option value="select">Combo / Lista</option>
+                  <option value="checkbox">Checkbox</option>
+                </select>
+                <label class="field-checkbox">
+                  <input type="checkbox" [(ngModel)]="field.required" (ngModelChange)="onFieldChange()"> 
+                  <span>Requerido</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <div class="empty-state" *ngIf="getFormFields().length === 0">
+            No hay campos definidos. Pulsa "Añadir Campo" para empezar.
+          </div>
+        </div>
       </div>
       
       <div class="modal-footer">

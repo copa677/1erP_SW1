@@ -27,6 +27,44 @@ export class PropertiesComponent {
     '#e2e8f0'  // Slate 200
   ];
 
+  getActionType(): string {
+    const cell = this.diagramService.selectedCell();
+    return cell?.get('actionType') || 'none';
+  }
+
+  onActionTypeChange(type: string) {
+    const cell = this.diagramService.selectedCell();
+    if (cell) {
+      cell.set('actionType', type);
+      this.updateVisualFeedback(cell, type);
+    }
+  }
+
+  private updateVisualFeedback(cell: any, type: string) {
+    if (cell.isLink()) return;
+
+    let stroke = '#3b82f6'; // Default
+    let labelSuffix = '';
+
+    switch (type) {
+      case 'form':
+        stroke = '#10b981'; // Esmeralda
+        labelSuffix = ' [FORM]';
+        break;
+      case 'signature':
+        stroke = '#4f46e5'; // Indigo
+        labelSuffix = ' [FIRMA]';
+        break;
+      case 'sello':
+        stroke = '#f59e0b'; // Ámbar
+        labelSuffix = ' [SELLO]';
+        break;
+    }
+
+    cell.attr('body/stroke', stroke);
+    cell.attr('body/strokeWidth', type === 'none' ? 2 : 4);
+  }
+
   onLabelChange(newLabel: string) {
     const cell = this.diagramService.selectedCell();
     if (cell) {
@@ -42,6 +80,48 @@ export class PropertiesComponent {
       } else {
         cell.attr('body/fill', newColor);
       }
+    }
+  }
+
+  // --- Gestión de Formulario Dinámico ---
+
+  getFormFields(): any[] {
+    const cell = this.diagramService.selectedCell();
+    if (!cell) return [];
+    if (!cell.get('formFields')) {
+      cell.set('formFields', []);
+    }
+    return cell.get('formFields');
+  }
+
+  addFormField() {
+    const cell = this.diagramService.selectedCell();
+    if (cell) {
+      const fields = [...this.getFormFields()];
+      fields.push({
+        label: 'Nuevo Campo',
+        type: 'text',
+        required: false
+      });
+      cell.set('formFields', fields);
+    }
+  }
+
+  removeFormField(index: number) {
+    const cell = this.diagramService.selectedCell();
+    if (cell) {
+      const fields = [...this.getFormFields()];
+      fields.splice(index, 1);
+      cell.set('formFields', fields);
+    }
+  }
+
+  onFieldChange() {
+    const cell = this.diagramService.selectedCell();
+    if (cell) {
+      // Forzar actualización del modelo para asegurar que el JSON se genere con datos frescos
+      const fields = [...this.getFormFields()];
+      cell.set('formFields', fields);
     }
   }
 
