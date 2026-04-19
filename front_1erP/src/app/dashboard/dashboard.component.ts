@@ -5,6 +5,7 @@ import { ProjectService } from '../services/project.service';
 import { Project } from '../interfaces/project.interface';
 import { AuthService } from '../services/auth.service';
 import { FormsModule } from '@angular/forms';
+import { NotificationService } from '../services/notification.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -16,6 +17,7 @@ import { FormsModule } from '@angular/forms';
 export class DashboardComponent implements OnInit {
   public projectService = inject(ProjectService);
   public authService = inject(AuthService);
+  private notificationService = inject(NotificationService);
   private router = inject(Router);
 
   showCreateModal = signal<boolean>(false);
@@ -32,18 +34,36 @@ export class DashboardComponent implements OnInit {
     if (this.newProjectName.trim()) {
       this.projectService.createProject(this.newProjectName, this.newProjectDescription).subscribe({
         next: (project) => {
+          this.notificationService.success('Proyecto creado correctamente');
           this.router.navigate(['/editor', project.id]);
         },
-        error: (err) => console.error('Error creating project', err)
+        error: (err) => {
+          this.notificationService.error('Error al crear el proyecto');
+          console.error('Error creating project', err);
+        }
       });
     }
   }
 
-  deleteProject(event: Event, id: string | undefined) {
+  async deleteProject(event: Event, id: string | undefined) {
     event.stopPropagation();
-    if (id && confirm('¿Estás seguro de que deseas eliminar este proyecto?')) {
+    if (!id) return;
+
+    const confirmed = await this.notificationService.confirm(
+      '¿Estás seguro de que deseas eliminar este proyecto? Esta acción no se puede deshacer.',
+      'Eliminar Proyecto',
+      'Eliminar Proyecto',
+      'Cancelar',
+      'danger'
+    );
+
+    if (confirmed) {
       this.projectService.deleteProject(id).subscribe({
-        error: (err) => console.error('Error deleting project', err)
+        next: () => this.notificationService.success('Proyecto eliminado'),
+        error: (err) => {
+          this.notificationService.error('Error al eliminar el proyecto');
+          console.error('Error deleting project', err);
+        }
       });
     }
   }

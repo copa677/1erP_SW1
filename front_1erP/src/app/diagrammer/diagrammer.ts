@@ -7,6 +7,7 @@ import { PropertiesComponent } from './components/properties/properties.componen
 import { DiagramService } from './services/diagram.service';
 import { ProjectService } from '../services/project.service';
 import { Project } from '../interfaces/project.interface';
+import { NotificationService } from '../services/notification.service';
 
 @Component({
   selector: 'app-diagrammer',
@@ -18,6 +19,7 @@ import { Project } from '../interfaces/project.interface';
 export class DiagrammerComponent implements OnInit {
   public diagramService = inject(DiagramService);
   private projectService = inject(ProjectService);
+  private notificationService = inject(NotificationService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
@@ -38,6 +40,7 @@ export class DiagrammerComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error loading project', err);
+          this.notificationService.error('No se pudo cargar el proyecto');
           this.router.navigate(['/dashboard']);
         }
       });
@@ -48,10 +51,19 @@ export class DiagrammerComponent implements OnInit {
     return this.diagramService.graph.getCells().length;
   }
 
-  clearCanvas() {
-    if (confirm('¿Estás seguro de que deseas limpiar todo el lienzo?')) {
+  async clearCanvas() {
+    const confirmed = await this.notificationService.confirm(
+      '¿Estás seguro de que deseas limpiar todo el lienzo? Esta acción eliminará todos los elementos actuales.',
+      'Limpiar Lienzo',
+      'Limpiar Todo',
+      'Mantener diagrama',
+      'danger'
+    );
+
+    if (confirmed) {
       this.diagramService.graph.clear();
       this.diagramService.closeProperties();
+      this.notificationService.info('Lienzo limpiado');
     }
   }
 
@@ -68,11 +80,11 @@ export class DiagrammerComponent implements OnInit {
       this.projectService.updateProject(this.currentProject.id, updatedProject).subscribe({
         next: (saved) => {
           this.currentProject = saved;
-          alert('Proyecto guardado correctamente en el servidor');
+          this.notificationService.success('Proyecto guardado correctamente');
         },
         error: (err) => {
           console.error('Error saving project', err);
-          alert('Error al guardar el proyecto en el servidor');
+          this.notificationService.error('Error al guardar el proyecto');
         }
       });
     }
@@ -87,6 +99,7 @@ export class DiagrammerComponent implements OnInit {
     link.download = `${this.currentProject?.name || 'diagrama'}.json`;
     link.click();
     window.URL.revokeObjectURL(url);
+    this.notificationService.info('Archivo JSON generado');
   }
 
   onFileSelected(event: any) {
@@ -97,10 +110,10 @@ export class DiagrammerComponent implements OnInit {
         try {
           const json = JSON.parse(e.target.result);
           this.diagramService.importJSON(json);
-          // Resetear el input para permitir cargar el mismo archivo de nuevo
+          this.notificationService.success('Diagrama cargado con éxito');
           event.target.value = '';
         } catch (err) {
-          alert('Error al cargar el archivo. Asegúrate de que es un JSON válido.');
+          this.notificationService.error('Error: El archivo no es un JSON válido');
           event.target.value = '';
         }
       };

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-login',
@@ -14,6 +15,7 @@ import { AuthService } from '../../services/auth.service';
 export class LoginComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private notificationService = inject(NotificationService);
 
   email = '';
   password = '';
@@ -28,8 +30,10 @@ export class LoginComponent {
     setTimeout(() => {
       this.authService.login(this.email, this.password).subscribe(success => {
         if (success) {
+          this.notificationService.success('¡Bienvenido de nuevo!');
           this.router.navigate(['/dashboard']);
         } else {
+          this.notificationService.error('Las credenciales ingresadas son incorrectas.');
           this.error.set('Correo o contraseña incorrectos.');
           this.isLoading.set(false);
         }
