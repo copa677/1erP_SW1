@@ -11,6 +11,8 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -28,6 +30,16 @@ public class Project {
     
     // ID del usuario dueño del proyecto
     private String ownerId;
+
+    // Lista de IDs de usuarios colaboradores
+    private List<String> collaboratorIds;
+
+    public List<String> getCollaboratorIds() {
+        if (collaboratorIds == null) {
+            collaboratorIds = new ArrayList<>();
+        }
+        return collaboratorIds;
+    }
 
     // Estructura de datos de JointJS (cells, etc.)
     // Usamos Map para permitir cualquier JSON dinámico de JointJS

@@ -17,33 +17,34 @@ public class ProjectController {
 
     private final ProjectService projectService;
 
-    // Obtener todos los proyectos del usuario autenticado
+    // Obtener todos los proyectos del usuario (dueño o colaborador)
     @GetMapping
-    public ResponseEntity<List<Project>> getMyProjects(@AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.ok(projectService.getAllProjectsByOwner(currentUser.getId()));
+    public ResponseEntity<List<Project>> listProjects(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(projectService.getProjectsForUser(currentUser.getId()));
     }
 
-    // Obtener un proyecto específico
+    // Crear un nuevo proyecto
+    @PostMapping
+    public ResponseEntity<Project> createProject(@RequestBody Project request, @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(projectService.createProject(request.getName(), request.getDescription(), currentUser.getId()));
+    }
+
+    // Unirse a un proyecto existente mediante su ID
+    @PostMapping("/{id}/join")
+    public ResponseEntity<Project> joinProject(@PathVariable String id, @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(projectService.joinProject(id, currentUser.getId()));
+    }
+
+    // Obtener un proyecto específico (debe ser dueño o colaborador)
     @GetMapping("/{id}")
     public ResponseEntity<Project> getProjectById(
             @PathVariable String id, 
             @AuthenticationPrincipal User currentUser) {
         return projectService.getProjectById(id)
-                .filter(p -> p.getOwnerId().equals(currentUser.getId()))
+                .filter(p -> p.getOwnerId().equals(currentUser.getId()) || 
+                           (p.getCollaboratorIds() != null && p.getCollaboratorIds().contains(currentUser.getId())))
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.status(403).build());
-    }
-
-    // Crear un nuevo proyecto
-    @PostMapping
-    public ResponseEntity<Project> createProject(
-            @RequestBody Project request,
-            @AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.ok(projectService.createProject(
-                request.getName(), 
-                request.getDescription(), 
-                currentUser.getId()
-        ));
     }
 
     // Actualizar un proyecto
@@ -60,7 +61,7 @@ public class ProjectController {
         }
     }
 
-    // Eliminar un proyecto
+    // Eliminar un proyecto (solo permitido para el dueño)
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProject(
             @PathVariable String id,

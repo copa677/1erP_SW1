@@ -5,6 +5,7 @@ export interface Project {
   ownerId?: string;
   data?: any;
   elementCount?: number;
+  collaboratorIds?: string[];
   createdAt?: string;
   updatedAt?: string;
   version?: number;

@@ -21,13 +21,31 @@ export class DashboardComponent implements OnInit {
   private router = inject(Router);
 
   showCreateModal = signal<boolean>(false);
+  showJoinModal = signal<boolean>(false);
   newProjectName = '';
   newProjectDescription = '';
+  joinProjectId = '';
 
   ngOnInit() {
     this.projectService.loadProjects().subscribe({
       error: (err) => console.error('Error loading projects', err)
     });
+  }
+
+  joinProject() {
+    if (this.joinProjectId.trim()) {
+      this.projectService.joinProject(this.joinProjectId.trim()).subscribe({
+        next: (project) => {
+          this.notificationService.success(`Te has unido al proyecto: ${project.name}`);
+          this.showJoinModal.set(false);
+          this.joinProjectId = '';
+        },
+        error: (err) => {
+          const errMsg = err.error?.message || 'ID de proyecto inválido o ya eres colaborador';
+          this.notificationService.error(errMsg);
+        }
+      });
+    }
   }
 
   createNewProject() {

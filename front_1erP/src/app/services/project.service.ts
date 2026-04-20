@@ -53,6 +53,14 @@ export class ProjectService {
     );
   }
 
+  joinProject(id: string): Observable<Project> {
+    return this.http.post<Project>(`${this.API_URL}/${id}/join`, {}).pipe(
+      tap((newSharedProject) => {
+        this.projects.update(current => [...current, newSharedProject]);
+      })
+    );
+  }
+
   // Método auxiliar para el editor que no devuelve observable sino que se encarga del guardado
   saveProject(project: Project) {
     if (project.id) {
