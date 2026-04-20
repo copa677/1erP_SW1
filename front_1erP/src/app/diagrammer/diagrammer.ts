@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
@@ -8,6 +8,8 @@ import { DiagramService } from './services/diagram.service';
 import { ProjectService } from '../services/project.service';
 import { Project } from '../interfaces/project.interface';
 import { NotificationService } from '../services/notification.service';
+import { CollaborationService } from '../services/collaboration.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-diagrammer',
@@ -16,13 +18,15 @@ import { NotificationService } from '../services/notification.service';
   templateUrl: './diagrammer.html',
   styleUrl: './diagrammer.css'
 })
-export class DiagrammerComponent implements OnInit {
+export class DiagrammerComponent implements OnInit, OnDestroy {
   public diagramService = inject(DiagramService);
+  public collabService = inject(CollaborationService);
   private projectService = inject(ProjectService);
   private notificationService = inject(NotificationService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
+  private subscriptions: Subscription = new Subscription();
   currentProject?: Project;
 
   ngOnInit() {
@@ -31,8 +35,12 @@ export class DiagrammerComponent implements OnInit {
       this.projectService.getProjectById(id).subscribe({
         next: (project) => {
           this.currentProject = project;
+          
+          // Conectarse a la colaboración en tiempo real
+          this.collabService.connect(id);
+          this.setupCollaboration();
+
           if (project.data) {
-            // Pequeño delay para asegurar que el canvas esté inicializado
             setTimeout(() => {
               this.diagramService.importJSON(project.data);
             }, 100);
@@ -45,6 +53,55 @@ export class DiagrammerComponent implements OnInit {
         }
       });
     });
+  }
+
+  ngOnDestroy() {
+    this.collabService.disconnect();
+    this.subscriptions.unsubscribe();
+  }
+
+  private setupCollaboration() {
+    // 1. Escuchar cambios locales y enviarlos al socket
+    this.subscriptions.add(
+      this.diagramService.graphChange$.subscribe((change: any) => {
+        if (this.currentProject?.id) {
+          this.collabService.sendUpdate(this.currentProject.id, change.type, change.cell);
+        }
+      })
+    );
+
+    // 2. Escuchar mensajes del socket y aplicarlos al lienzo
+    this.subscriptions.add(
+      this.collabService.messages$.subscribe(msg => {
+        this.applyRemoteChange(msg);
+      })
+    );
+  }
+
+  private applyRemoteChange(msg: any) {
+    const { type, payload } = msg;
+
+    if (type === 'MOVE') {
+      const cell = this.diagramService.graph.getCell(payload.id);
+      if (cell && cell.isElement()) {
+        // Actualizar posición con flag 'remote' para evitar bucle
+        (cell as joint.dia.Element).position(payload.position.x, payload.position.y, { remote: true });
+      }
+    } else if (type === 'ADD') {
+      // Evitar duplicados si ya existe
+      if (!this.diagramService.graph.getCell(payload.id)) {
+        this.diagramService.graph.addCell(payload, { remote: true });
+      }
+    } else if (type === 'REMOVE') {
+      const cell = this.diagramService.graph.getCell(payload.id);
+      if (cell) {
+        cell.remove({ remote: true });
+      }
+    } else if (type === 'USER_JOINED') {
+      this.notificationService.info(`${msg.username} se ha unido al diagrama`);
+    } else if (type === 'USER_LEFT') {
+      this.notificationService.info(`${msg.username} ha salido del diagrama`);
+    }
   }
 
   get elementCount() {
@@ -100,6 +157,13 @@ export class DiagrammerComponent implements OnInit {
     link.click();
     window.URL.revokeObjectURL(url);
     this.notificationService.info('Archivo JSON generado');
+  }
+
+  copyProjectId() {
+    if (this.currentProject?.id) {
+      navigator.clipboard.writeText(this.currentProject.id);
+      this.notificationService.success('ID del proyecto copiado al portapapeles');
+    }
   }
 
   onFileSelected(event: any) {

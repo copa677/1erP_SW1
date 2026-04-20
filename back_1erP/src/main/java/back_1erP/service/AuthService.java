@@ -2,6 +2,7 @@ package back_1erP.service;
 
 import back_1erP.dto.AuthRequestDTO;
 import back_1erP.dto.TokenResponseDTO;
+import back_1erP.dto.UserDTO;
 import back_1erP.dto.UserRegisterDTO;
 import back_1erP.model.User;
 import back_1erP.repository.UserRepository;
@@ -37,11 +38,13 @@ public class AuthService {
                 .activo(true)
                 .build();
         
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
         
-        var userDetails = userDetailsService.loadUserByUsername(user.getCorreo());
+        var userDetails = userDetailsService.loadUserByUsername(savedUser.getCorreo());
         var jwtToken = jwtService.generateToken(userDetails);
-        return new TokenResponseDTO(jwtToken);
+        
+        UserDTO userDTO = mapToUserDTO(savedUser);
+        return new TokenResponseDTO(jwtToken, userDTO);
     }
 
     public TokenResponseDTO login(AuthRequestDTO request) {
@@ -52,8 +55,23 @@ public class AuthService {
                 )
         );
         
+        var user = userRepository.findByCorreo(request.correo())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        
         var userDetails = userDetailsService.loadUserByUsername(request.correo());
         var jwtToken = jwtService.generateToken(userDetails);
-        return new TokenResponseDTO(jwtToken);
+        
+        UserDTO userDTO = mapToUserDTO(user);
+        return new TokenResponseDTO(jwtToken, userDTO);
+    }
+
+    private UserDTO mapToUserDTO(User user) {
+        return UserDTO.builder()
+                .id(user.getId())
+                .nombres(user.getNombres())
+                .apellidos(user.getApellidos())
+                .correo(user.getCorreo())
+                .rol(user.getRol())
+                .build();
     }
 }

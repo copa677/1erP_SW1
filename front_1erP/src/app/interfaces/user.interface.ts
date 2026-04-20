@@ -9,4 +9,5 @@ export interface User {
 
 export interface TokenResponse {
   access_token: string;
+  user: User;
 }

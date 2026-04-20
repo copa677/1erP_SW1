@@ -34,20 +34,9 @@ export class AuthService {
     return this.http.post<TokenResponse>(`${this.AUTH_URL}/login`, { correo, password }).pipe(
       tap(response => {
         localStorage.setItem('uml_token', response.access_token);
+        localStorage.setItem('uml_user', JSON.stringify(response.user));
         
-        // Mock de datos de usuario ya que el backend actual solo devuelve el token
-        // En una app real, llamaríamos a /api/users/me o decodificaríamos el JWT
-        const mockUser: User = {
-          id: 'temp-id',
-          nombres: 'Usuario',
-          apellidos: 'Conectado',
-          correo: correo,
-          rol: 'ADMIN',
-          activo: true
-        };
-        
-        localStorage.setItem('uml_user', JSON.stringify(mockUser));
-        this.currentUser.set(mockUser);
+        this.currentUser.set(response.user);
         this.isAuthenticated.set(true);
       }),
       map(() => true),
@@ -64,5 +53,9 @@ export class AuthService {
     this.currentUser.set(null);
     this.isAuthenticated.set(false);
     this.router.navigate(['/login']);
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem('uml_token');
   }
 }

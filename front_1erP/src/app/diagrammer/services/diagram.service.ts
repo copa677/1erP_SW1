@@ -1,4 +1,5 @@
 import { Injectable, signal, NgZone, inject } from '@angular/core';
+import { Subject } from 'rxjs';
 import * as joint from 'jointjs';
 import { UMLShapes, createUMLTools, createLinkTools, portConfig } from '../elements/uml-shapes';
 
@@ -15,6 +16,31 @@ export class DiagramService {
   public paper!: joint.dia.Paper;
   public selectedCell = signal<joint.dia.Cell | null>(null);
   public showProperties = signal<boolean>(false);
+
+  // Eventos para colaboración
+  public graphChange$ = new Subject<{ type: 'ADD' | 'REMOVE' | 'UPDATE' | 'MOVE', cell: any }>();
+
+  constructor() {
+    // Escuchar movimientos de elementos
+    this.graph.on('change:position', (cell, pos, opt) => {
+      // Solo emitir si el cambio NO viene del socket (no es 'remote')
+      if (!opt.remote) {
+        this.graphChange$.next({ type: 'MOVE', cell: cell.toJSON() });
+      }
+    });
+
+    this.graph.on('add', (cell, collection, opt) => {
+      if (!opt.remote) {
+        this.graphChange$.next({ type: 'ADD', cell: cell.toJSON() });
+      }
+    });
+
+    this.graph.on('remove', (cell, collection, opt) => {
+      if (!opt.remote) {
+        this.graphChange$.next({ type: 'REMOVE', cell: cell.toJSON() });
+      }
+    });
+  }
 
   public selectCell(cell: joint.dia.Cell | null) {
     this.zone.run(() => {
