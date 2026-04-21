@@ -10,6 +10,8 @@ import { Project } from '../interfaces/project.interface';
 import { NotificationService } from '../services/notification.service';
 import { CollaborationService } from '../services/collaboration.service';
 import { Subscription } from 'rxjs';
+import { SpeechService } from './services/speech.service';
+import { AIService } from './services/ai.service';
 
 @Component({
   selector: 'app-diagrammer',
@@ -25,9 +27,17 @@ export class DiagrammerComponent implements OnInit, OnDestroy {
   private notificationService = inject(NotificationService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private speechService = inject(SpeechService);
+  private aiService = inject(AIService);
 
   private subscriptions: Subscription = new Subscription();
   currentProject?: Project;
+  
+  // Estados de UI
+  public isSidebarCollapsed = false;
+  public isAIPanelOpen = false;
+  public aiResponse: string = '';
+  public isListening = false;
 
   ngOnInit() {
     this.route.params.subscribe(params => {
@@ -112,6 +122,9 @@ export class DiagrammerComponent implements OnInit, OnDestroy {
       if (!this.diagramService.graph.getCell(payload.id)) {
         this.diagramService.graph.addCell(payload, { remote: true });
       }
+    } else if (type === 'MOVE') {
+      const cell = this.diagramService.graph.getCell(payload.id) as any;
+      if (cell && cell.position) cell.position(payload.x, payload.y);
     } else if (type === 'REMOVE') {
       const cell = this.diagramService.graph.getCell(payload.id);
       if (cell) {
@@ -155,7 +168,43 @@ export class DiagrammerComponent implements OnInit, OnDestroy {
         elementCount: this.elementCount
       };
 
-      this.projectService.updateProject(this.currentProject.id, updatedProject).subscribe({
+      this.loadProject(updatedProject);
+    }
+  }
+
+  toggleSidebar() {
+    this.isSidebarCollapsed = !this.isSidebarCollapsed;
+  }
+
+  toggleAIPanel() {
+    this.isAIPanelOpen = !this.isAIPanelOpen;
+  }
+
+  async startVoiceCommand() {
+    try {
+      this.isListening = true;
+      this.aiResponse = 'Escuchando...';
+      const text = await this.speechService.startListening();
+      
+      this.isListening = false;
+      this.aiResponse = `Procesando comando: "${text}"...`;
+      
+      const result = await this.aiService.sendPrompt(text);
+      if (result.success) {
+        this.aiResponse = `IA: He ejecutado ${result.count} acciones en el diagrama.`;
+      } else {
+        this.aiResponse = `IA: ${result.error || 'No pude entender el comando.'}`;
+      }
+    } catch (err: any) {
+      this.isListening = false;
+      this.aiResponse = `Error de Voz: ${err}`;
+      console.error('Speech Error:', err);
+    }
+  }
+
+  private loadProject(updatedProject: Project) {
+    if (this.currentProject?.id) {
+      this.projectService.updateProject(this.currentProject.id as string, updatedProject).subscribe({
         next: (saved) => {
           this.currentProject = saved;
           this.notificationService.success('Proyecto guardado correctamente');
@@ -187,19 +236,20 @@ export class DiagrammerComponent implements OnInit, OnDestroy {
     }
   }
 
-  onFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
       const reader = new FileReader();
       reader.onload = (e: any) => {
         try {
           const json = JSON.parse(e.target.result);
           this.diagramService.importJSON(json);
           this.notificationService.success('Diagrama cargado con éxito');
-          event.target.value = '';
+          input.value = '';
         } catch (err) {
           this.notificationService.error('Error: El archivo no es un JSON válido');
-          event.target.value = '';
+          input.value = '';
         }
       };
       reader.readAsText(file);

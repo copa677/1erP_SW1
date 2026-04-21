@@ -5,18 +5,22 @@
     representaremos cualquier flujo, ejemplo: digamos que tengo que ir a hacer papeleo a una empresa grande,
     caundo yo empiece el papeleo, se va a empezar en un departamento, luego pasa al siguiente, y asi sucesivamente
     dependiendo del pasara por uno o mas departamentos, en cada departamento se puede pedir firmas, sellos,
-    llenar formularios,etc."
+    llenar formularios,etc.",
+
     "caracteristicas_software" : "
     -el sorfware debe de poder hacer seguimiento a este flujo.
     -el sotftware debe de ser colaborativo(me refiero a que uno o mas usuarios deben de poder diseñar el diagrama actividad al mismotiempo)
     -el sotware debe de guardar los diagramas que haga el usuario,tambien se de crear nuevos y editar los que ya habian
-    -por el momento esto va ser en lo que nos enfocaremos."
+    -por el momento esto va ser en lo que nos enfocaremos.",
+
     "tecnologias" : "
     -backend: spring boot version 4.0.5 con java 21
     -frontend: angular con typescript
     -base de datos: moongodb
     -manejo de usuarios: spring security con jwt
-    -manejo de diagramas: joint js" 
-    "estandar_uml": "uml 2.5 o superiores"
+    -manejo de diagramas: joint js",
+
+    "estandar_uml": "uml 2.5 o superiores",
+
     "estandar_codigo": "quiero que manejes estandar tanto par ale back como para el front"
 }

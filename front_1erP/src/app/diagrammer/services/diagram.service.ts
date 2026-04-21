@@ -178,4 +178,25 @@ export class DiagramService {
     element.addTo(this.graph);
     return element;
   }
+
+  public addLink(sourceId: string, targetId: string, label: string = '') {
+    const link = new joint.shapes.standard.Link({
+      source: { id: sourceId },
+      target: { id: targetId },
+      attrs: {
+        line: { stroke: '#64748b', strokeWidth: 2, targetMarker: { 'type': 'path', 'd': 'M 10 -5 0 0 10 5 Z' } }
+      }
+    });
+
+    if (label) {
+      link.appendLabel({
+        attrs: {
+          text: { text: label, fill: '#1e293b', fontSize: 12 }
+        }
+      });
+    }
+
+    link.addTo(this.graph);
+    return link;
+  }
 }

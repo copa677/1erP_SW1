@@ -1,6 +1,7 @@
 package back_1erP.controller;
 
 import back_1erP.dto.CollaborationMessage;
+import back_1erP.listener.WebSocketEventListener;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Controller;
 @RequiredArgsConstructor
 public class CollaborationController {
 
+    private final WebSocketEventListener sessionEventListener;
+
     /**
      * Recibe actualizaciones del diagrama de un cliente y las retransmite a todos
      * los colaboradores suscritos al proyecto específico.
@@ -24,8 +27,14 @@ public class CollaborationController {
             @Payload CollaborationMessage message,
             SimpMessageHeaderAccessor headerAccessor) {
         
-        // Aquí podríamos validar persistencia en base de datos si fuera necesario,
-        // pero para tiempo real fluido, la retransmisión directa es clave.
+        // Registrar la sesión para que el listener sepa quién es si se desconecta
+        sessionEventListener.registerUserSession(
+                headerAccessor.getSessionId(),
+                projectId,
+                message.getUserId(),
+                message.getUsername()
+        );
+        
         return message; 
     }
 
