@@ -21,6 +21,20 @@
         </div>
       </div>
     </div>
+
+    <!-- Barra de Colaboradores -->
+    <div class="presence-bar" *ngIf="collabService.isConnected()">
+      <div class="user-avatars">
+        <div *ngFor="let user of collabService.activeUsers()" 
+             class="user-avatar" 
+             [style.background-color]="user.color"
+             [title]="user.username">
+          {{ user.initials }}
+        </div>
+      </div>
+      <span class="presence-count">{{ collabService.activeUsers().length + 1 }} activos</span>
+    </div>
+
     <div class="actions">
       <span class="stats">{{ elementCount }} elementos</span>
       <button class="btn-secondary" (click)="clearCanvas()">Limpiar</button>

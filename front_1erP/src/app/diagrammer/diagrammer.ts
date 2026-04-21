@@ -32,6 +32,8 @@ export class DiagrammerComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.route.params.subscribe(params => {
       const id = params['id'];
+      this.diagramService.currentProjectId = id; // Guardar ID global
+      
       this.projectService.getProjectById(id).subscribe({
         next: (project) => {
           this.currentProject = project;
@@ -57,15 +59,23 @@ export class DiagrammerComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.collabService.disconnect();
+    this.diagramService.currentProjectId = null;
     this.subscriptions.unsubscribe();
   }
 
   private setupCollaboration() {
-    // 1. Escuchar cambios locales y enviarlos al socket
+    // 1. Escuchar cambios locales (solo ADD, REMOVE, UPDATE directos)
     this.subscriptions.add(
       this.diagramService.graphChange$.subscribe((change: any) => {
         if (this.currentProject?.id) {
-          this.collabService.sendUpdate(this.currentProject.id, change.type, change.cell);
+          if (change.type === 'COMMIT') {
+              this.collabService.commitChange(this.currentProject.id, change.cell.id, change.cell);
+          } else if (change.type === 'CLEAR') {
+              this.collabService.sendMessage(this.currentProject.id, 'CLEAR', null);
+          } else {
+              // ADD / REMOVE
+              this.collabService.sendMessage(this.currentProject.id, change.type, change.cell);
+          }
         }
       })
     );
@@ -81,14 +91,24 @@ export class DiagrammerComponent implements OnInit, OnDestroy {
   private applyRemoteChange(msg: any) {
     const { type, payload } = msg;
 
-    if (type === 'MOVE') {
-      const cell = this.diagramService.graph.getCell(payload.id);
-      if (cell && cell.isElement()) {
-        // Actualizar posición con flag 'remote' para evitar bucle
-        (cell as joint.dia.Element).position(payload.position.x, payload.position.y, { remote: true });
-      }
+    if (type === 'COMMIT') {
+        const cellId = payload.cellId || payload.id;
+        const cell = this.diagramService.graph.getCell(cellId);
+        
+        if (cell) {
+            // Limpiar el payload de metadatos de mensajería para no ensuciar el modelo de JointJS
+            const cleanData = { ...payload };
+            delete cleanData.cellId;
+            delete cleanData.projectId;
+            delete cleanData.userId;
+            delete cleanData.username;
+            delete cleanData.type; // JointJS mantendrá su tipo original, no queremos cambiarlo
+
+            // Usar prop() para un "Deep Merge" (fusión profunda). 
+            // Esto preserva los atributos 'ref' de JointJS que mantienen el diseño y el centro del texto.
+            (cell as any).prop(cleanData, { remote: true });
+        }
     } else if (type === 'ADD') {
-      // Evitar duplicados si ya existe
       if (!this.diagramService.graph.getCell(payload.id)) {
         this.diagramService.graph.addCell(payload, { remote: true });
       }
@@ -97,10 +117,11 @@ export class DiagrammerComponent implements OnInit, OnDestroy {
       if (cell) {
         cell.remove({ remote: true });
       }
+    } else if (type === 'CLEAR') {
+        this.diagramService.graph.clear({ remote: true });
+        this.notificationService.info(`El lienzo ha sido limpiado por ${msg.username}`);
     } else if (type === 'USER_JOINED') {
-      this.notificationService.info(`${msg.username} se ha unido al diagrama`);
-    } else if (type === 'USER_LEFT') {
-      this.notificationService.info(`${msg.username} ha salido del diagrama`);
+      // Notificación ya manejada por la barra de presencia visualmente, pero podemos dejar el log
     }
   }
 

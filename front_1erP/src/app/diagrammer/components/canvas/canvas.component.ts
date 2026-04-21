@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { DiagramService } from '../../services/diagram.service';
 import { UMLShapes } from '../../elements/uml-shapes';
 import * as joint from 'jointjs';
+import { NotificationService } from '../../../services/notification.service';
 
 @Component({
   selector: 'app-canvas',
@@ -15,10 +16,12 @@ import * as joint from 'jointjs';
 export class CanvasComponent implements AfterViewInit, OnDestroy {
   @ViewChild('paperElement') paperElement!: ElementRef;
   @ViewChild('canvasContainer') canvasContainer!: ElementRef;
+  @ViewChild('cursorLayer') cursorLayer!: ElementRef;
   
-  private diagramService = inject(DiagramService);
+  public diagramService = inject(DiagramService);
   private zone = inject(NgZone);
   private renderer = inject(Renderer2);
+  private notificationService = inject(NotificationService);
   
   private currentScale = 1;
   private eventListeners: (() => void)[] = [];
@@ -45,6 +48,17 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.eventListeners.forEach(unlisten => unlisten());
   }
 
+  private updateCursorLayerTransform() {
+    if (!this.cursorLayer || !this.diagramService.paper) return;
+    
+    const scale = this.diagramService.paper.scale();
+    const translate = this.diagramService.paper.translate();
+    
+    // Aplicar la misma transformación que el papel de JointJS a la capa HTML de cursores
+    this.renderer.setStyle(this.cursorLayer.nativeElement, 'transform', 
+        `translate(${translate.tx}px, ${translate.ty}px) scale(${scale.sx}, ${scale.sy})`);
+  }
+
   onContextMenu(event: MouseEvent) {
     event.preventDefault();
   }
@@ -52,18 +66,14 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   private initPanListeners() {
       // 1. INICIO DEL EVENTO (mousedown NATIVO para evitar bloqueos de la librería)
       const unlistenDown = this.renderer.listen(this.canvasContainer.nativeElement, 'mousedown', (evt: MouseEvent) => {
-          // CLIC DERECHO (Botón 2 o which 3) -> PANEO UNIVERSAL
           if (evt.button === 2 || evt.which === 3) {
-              this.zone.run(() => {
-                  this.isPanning = true;
-              });
+              this.zone.run(() => this.isPanning = true);
               this.lastX = evt.clientX;
               this.lastY = evt.clientY;
               this.renderer.addClass(this.canvasContainer.nativeElement, 'panning');
               evt.stopPropagation();
               return;
           }
-
       });
 
       // 2. MOVIMIENTO GLOBAL
@@ -75,6 +85,8 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
           const currentT = this.diagramService.paper.translate();
           this.diagramService.paper.translate(currentT.tx + dx, currentT.ty + dy);
           
+          this.updateCursorLayerTransform();
+
           this.lastX = evt.clientX;
           this.lastY = evt.clientY;
       });
@@ -82,9 +94,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
       // 3. FINALIZACIÓN GLOBAL
       const unlistenUp = this.renderer.listen('window', 'mouseup', () => {
           if (this.isPanning) {
-              this.zone.run(() => {
-                  this.isPanning = false;
-              });
+              this.zone.run(() => this.isPanning = false);
               this.renderer.removeClass(this.canvasContainer.nativeElement, 'panning');
           }
       });
@@ -102,6 +112,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
                 if (newScale >= 0.2 && newScale <= 3) {
                     this.currentScale = newScale;
                     this.diagramService.paper.scale(newScale, newScale);
+                    this.updateCursorLayerTransform();
                 }
             });
         }
@@ -134,15 +145,31 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
       })
     });
 
-    // Escuchar reseteos de vista desde el servicio
-    this.diagramService.paper.on('view:reset', () => {
-        this.currentScale = 1;
+    // Sincronizar transformación inicial
+    this.updateCursorLayerTransform();
+
+    this.diagramService.paper.on('scale translate', () => {
+        this.updateCursorLayerTransform();
     });
 
-    // Clic izquierdo simple para herramientas rápidas (X y redimensionado)
+    this.diagramService.paper.on('view:reset', () => {
+        this.currentScale = 1;
+        this.updateCursorLayerTransform();
+    });
+
+    // --- Lógica de Interacción Colaborativa ---
+
     this.diagramService.paper.on('cell:pointerdown', (cellView: any, evt: any) => {
+      const lock = this.diagramService.collabService.activeLocks().get(cellView.model.id);
+      if (lock) {
+          this.zone.run(() => this.notificationService.warn(`Este elemento está bloqueado por ${lock.username}`));
+          evt.stopPropagation();
+          return;
+      }
       if (evt.button === 0) {
-        // Detección de Doble Clic (Clic izquierdo)
+        const projectId = this.diagramService.currentProjectId;
+        if (projectId) this.diagramService.collabService.lockCell(projectId, cellView.model.id);
+
         const now = Date.now();
         if (now - this.lastClickTime < this.clickThreshold) {
             this.zone.run(() => {
@@ -150,21 +177,66 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
                 this.diagramService.openProperties();
             });
         } else {
-            // Clic simple solo selecciona
-            this.zone.run(() => {
-                this.diagramService.selectCell(cellView.model);
-            });
+            this.zone.run(() => this.diagramService.selectCell(cellView.model));
         }
         this.lastClickTime = now;
       }
     });
 
+    this.diagramService.paper.on('cell:pointerup', (cellView: any) => {
+        const projectId = this.diagramService.currentProjectId;
+        if (projectId) {
+            this.diagramService.collabService.commitChange(projectId, cellView.model.id, cellView.model.toJSON());
+        }
+    });
+
+    this.diagramService.paper.on('link:pointerdown', (linkView: any, evt: any) => {
+      const lock = this.diagramService.collabService.activeLocks().get(linkView.model.id);
+      if (lock) {
+          this.zone.run(() => this.notificationService.warn(`Esta flecha está bloqueada por ${lock.username}`));
+          evt.stopPropagation();
+          return;
+      }
+      const projectId = this.diagramService.currentProjectId;
+      if (projectId) this.diagramService.collabService.lockCell(projectId, linkView.model.id);
+    });
+
+    this.diagramService.paper.on('link:pointerup', (linkView: any) => {
+        const projectId = this.diagramService.currentProjectId;
+        if (projectId) {
+            const model = linkView.model;
+            // Solo enviar COMMIT si la flecha está conectada a algo (tiene un target con ID)
+            // Esto evita que las flechas canceladas (en el aire) se resuciten en otros clientes.
+            if (model.get('target') && model.get('target').id) {
+                this.diagramService.collabService.commitChange(projectId, model.id, model.toJSON());
+            }
+        }
+    });
+
+    this.diagramService.paper.on('tool:pointerup', (toolView: any) => {
+        const model = toolView.parent.model;
+        const projectId = this.diagramService.currentProjectId;
+        if (projectId && model) {
+            this.diagramService.collabService.commitChange(projectId, model.id, model.toJSON());
+        }
+    });
+
     this.diagramService.paper.on('blank:pointerdown', (evt: any) => {
       if (evt.button === 0) {
-        this.zone.run(() => {
-          this.diagramService.closeProperties();
-        });
+        this.zone.run(() => this.diagramService.closeProperties());
       }
+    });
+
+    // Temporizador para debouncing de cambios de tamaño
+    let resizeTimer: any;
+
+    this.diagramService.graph.on('change:size', (cell: any, size: any, opt: any) => {
+        if (!opt.remote && this.diagramService.currentProjectId) {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                this.diagramService.collabService.commitChange(this.diagramService.currentProjectId!, cell.id, cell.toJSON());
+            }, 300);
+        }
     });
 
     this.diagramService.graph.on('change:position', (cell: joint.dia.Element) => {
@@ -182,6 +254,19 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     });
   }
 
+  onMouseMove(event: MouseEvent) {
+    if (!this.diagramService.paper) return;
+    const projectId = this.diagramService.currentProjectId;
+    if (!projectId) return;
+
+    const localPoint = this.diagramService.paper.clientToLocalPoint({
+        x: event.clientX,
+        y: event.clientY
+    });
+
+    this.diagramService.collabService.sendCursor(projectId, localPoint.x, localPoint.y);
+  }
+
   onDragOver(event: DragEvent) {
     event.preventDefault();
     if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
@@ -191,13 +276,10 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     event.preventDefault();
     const type = event.dataTransfer?.getData('type');
     if (type && this.diagramService.paper) {
-      // Usar la función nativa de JointJS para convertir coordenadas de pantalla a locales del lienzo
-      // Esto maneja automáticamente el zoom y el paneo (translate)
       const point = this.diagramService.paper.clientToLocalPoint({
         x: event.clientX,
         y: event.clientY
       });
-      
       this.zone.run(() => this.diagramService.addElement(type, point.x, point.y));
     }
   }

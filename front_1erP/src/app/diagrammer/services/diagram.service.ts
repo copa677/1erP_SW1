@@ -1,6 +1,7 @@
 import { Injectable, signal, NgZone, inject } from '@angular/core';
 import { Subject } from 'rxjs';
 import * as joint from 'jointjs';
+import { CollaborationService } from '../../services/collaboration.service';
 import { UMLShapes, createUMLTools, createLinkTools, portConfig } from '../elements/uml-shapes';
 
 @Injectable({
@@ -8,6 +9,7 @@ import { UMLShapes, createUMLTools, createLinkTools, portConfig } from '../eleme
 })
 export class DiagramService {
   private zone = inject(NgZone);
+  public collabService = inject(CollaborationService);
   
   public graph = new joint.dia.Graph({}, { 
     cellNamespace: { ...joint.shapes, ...UMLShapes } 
@@ -16,19 +18,12 @@ export class DiagramService {
   public paper!: joint.dia.Paper;
   public selectedCell = signal<joint.dia.Cell | null>(null);
   public showProperties = signal<boolean>(false);
+  public currentProjectId: string | null = null;
 
   // Eventos para colaboración
-  public graphChange$ = new Subject<{ type: 'ADD' | 'REMOVE' | 'UPDATE' | 'MOVE', cell: any }>();
+  public graphChange$ = new Subject<{ type: 'ADD' | 'REMOVE' | 'UPDATE' | 'MOVE' | 'CLEAR' | 'COMMIT', cell: any }>();
 
   constructor() {
-    // Escuchar movimientos de elementos
-    this.graph.on('change:position', (cell, pos, opt) => {
-      // Solo emitir si el cambio NO viene del socket (no es 'remote')
-      if (!opt.remote) {
-        this.graphChange$.next({ type: 'MOVE', cell: cell.toJSON() });
-      }
-    });
-
     this.graph.on('add', (cell, collection, opt) => {
       if (!opt.remote) {
         this.graphChange$.next({ type: 'ADD', cell: cell.toJSON() });
@@ -37,7 +32,8 @@ export class DiagramService {
 
     this.graph.on('remove', (cell, collection, opt) => {
       if (!opt.remote) {
-        this.graphChange$.next({ type: 'REMOVE', cell: cell.toJSON() });
+        // Para eliminación, solo necesitamos el ID. Es más seguro que toJSON() en un objeto ya eliminado.
+        this.graphChange$.next({ type: 'REMOVE', cell: { id: cell.id } });
       }
     });
   }
@@ -69,6 +65,11 @@ export class DiagramService {
   }
 
   public closeProperties() {
+    const cell = this.selectedCell();
+    if (cell && this.showProperties()) {
+      // Al cerrar, enviamos el estado final (COMMIT) para sincronizar texto/atributos
+      this.graphChange$.next({ type: 'COMMIT', cell: cell.toJSON() });
+    }
     this.showProperties.set(false);
   }
 
