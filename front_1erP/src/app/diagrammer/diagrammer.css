@@ -124,11 +124,10 @@
 
 .toolbar-wrapper {
   width: 260px;
-  flex-shrink: 1;
-  /* Permitir que se reduzca si es necesario */
   min-width: 0;
-  /* Truco de flexbox para evitar desbordamiento */
-  z-index: 5;
+  flex-shrink: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: white;
   border-right: 1px solid #e2e8f0;
 }
@@ -343,7 +342,7 @@
   top: 10px;
   right: 15px;
   /* Fijar a la derecha */
-  width: 320px;
+  width: 300px;
   height: calc(100% - 20px);
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(12px);

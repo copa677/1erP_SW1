@@ -185,10 +185,21 @@ export class DiagrammerComponent implements OnInit, OnDestroy {
       this.isListening = true;
       this.aiResponse = 'Escuchando...';
       const text = await this.speechService.startListening();
-      
       this.isListening = false;
-      this.aiResponse = `Procesando comando: "${text}"...`;
-      
+      await this.sendAICommand(text);
+    } catch (err: any) {
+      this.isListening = false;
+      this.aiResponse = `Error de Voz: ${err}`;
+      console.error('Speech Error:', err);
+    }
+  }
+
+  async sendAICommand(text: string) {
+    if (!text || text.trim() === '') return;
+    
+    this.aiResponse = `Procesando comando: "${text}"...`;
+    
+    try {
       const result = await this.aiService.sendPrompt(text);
       if (result.success) {
         this.aiResponse = `IA: He ejecutado ${result.count} acciones en el diagrama.`;
@@ -196,9 +207,8 @@ export class DiagrammerComponent implements OnInit, OnDestroy {
         this.aiResponse = `IA: ${result.error || 'No pude entender el comando.'}`;
       }
     } catch (err: any) {
-      this.isListening = false;
-      this.aiResponse = `Error de Voz: ${err}`;
-      console.error('Speech Error:', err);
+      this.aiResponse = `Error de IA: ${err.message || 'Error desconocido'}`;
+      console.error('AI Error:', err);
     }
   }
 

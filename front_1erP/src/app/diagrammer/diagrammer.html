@@ -80,7 +80,7 @@
           </button>
           
           <div class="ai-text-input">
-            <input type="text" #aiInput placeholder="Escribe un comando..." (keyup.enter)="startVoiceCommand(); aiInput.value=''">
+            <input type="text" #aiInput placeholder="Escribe un comando..." (keyup.enter)="sendAICommand(aiInput.value); aiInput.value=''">
           </div>
         </div>
       </div>

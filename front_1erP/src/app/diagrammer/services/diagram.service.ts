@@ -90,23 +90,32 @@ export class DiagramService {
     });
   }
 
-  public addElement(type: string, x: number, y: number) {
+  public addElement(type: string, x: number, y: number, name?: string, width?: number, height?: number) {
     let element: joint.dia.Element;
 
     const commonProps = {
         position: { x, y },
-        // IMPORTANTE: Definir puertos en la creación para asegurar el renderizado
         ports: portConfig
     };
 
     switch (type) {
+      case 'text':
+        element = new joint.shapes.standard.Rectangle();
+        element.position(x, y); // Asignar posición del mouse
+        element.resize(100, 40);
+        element.attr({
+          body: { fill: 'transparent', stroke: 'none' },
+          label: { text: 'Nuevo Texto', fill: '#1e293b', fontSize: 16 }
+        });
+        // No añadimos puertos para el texto
+        break;
       case 'activity':
         element = new joint.shapes.standard.Rectangle({
           ...commonProps,
           size: { width: 150, height: 60 },
           attrs: {
             body: { fill: '#ffffff', stroke: '#3b82f6', strokeWidth: 2, rx: 10, ry: 10 },
-            label: { text: 'Actividad', fill: '#1e293b' }
+            label: { text: name || 'Actividad', fill: '#1e293b' }
           }
         });
         break;
@@ -119,7 +128,7 @@ export class DiagramService {
               refPoints: '0,10 10,0 20,10 10,20',
               fill: '#ffffff', stroke: '#f59e0b', strokeWidth: 2 
             },
-            label: { text: '¿?', fill: '#1e293b' }
+            label: { text: name || '¿?', fill: '#1e293b' }
           }
         });
         break;
@@ -157,20 +166,41 @@ export class DiagramService {
         });
         break;
       case 'swimlane':
+      case 'swimlane-vertical':
+      case 'swimlane-horizontal': {
+        const isVertical = type === 'swimlane-vertical' || (name?.includes('vertical')) || (width && width < (height || 0));
+        
         element = new joint.shapes.standard.Rectangle({
           position: { x, y },
-          size: { width: 800, height: 200 },
+          size: { 
+            width: width || (isVertical ? 200 : 800), 
+            height: height || (isVertical ? 800 : 200) 
+          },
           attrs: {
             body: { fill: '#f8fafc', stroke: '#cbd5e1', strokeWidth: 2, strokeDasharray: '5,5' },
             label: { 
-              text: 'Carril', fill: '#64748b', fontSize: 14, fontWeight: 'bold',
-              refY: 10, textVerticalAnchor: 'top'
+              text: name?.replace('-vertical', '').replace('-horizontal', '') || (isVertical ? 'Carril Vert.' : 'Carril Horiz.'), 
+              fill: '#64748b', fontSize: 14, fontWeight: 'bold',
+              // Posicionamiento dinámico
+              ...(isVertical ? {
+                refY: 10,
+                textVerticalAnchor: 'top',
+                textAnchor: 'middle',
+                refX: '50%'
+              } : {
+                refX: 15,
+                refY: '50%',
+                textVerticalAnchor: 'middle',
+                textAnchor: 'middle',
+                transform: 'rotate(-90)' // Usamos transform para evitar conflictos de tipos
+              })
             }
           }
         });
         element.set('isSwimlane', true);
         element.set('z', -1);
         break;
+      }
       default:
         return;
     }
