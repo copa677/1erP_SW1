@@ -63,7 +63,8 @@ public class ProjectController {
             @AuthenticationPrincipal User currentUser) {
         return projectService.getProjectById(id)
                 .filter(p -> p.getOwnerId().equals(currentUser.getId()) ||
-                        (p.getCollaboratorIds() != null && p.getCollaboratorIds().contains(currentUser.getId())))
+                        (p.getCollaboratorIds() != null && p.getCollaboratorIds().contains(currentUser.getId())) ||
+                        (p.getAssignedOfficialId() != null && p.getAssignedOfficialId().equals(currentUser.getId())))
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.status(403).build());
     }

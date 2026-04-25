@@ -16,8 +16,8 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
 
     public List<Project> getProjectsForUser(String userId) {
-        // Buscamos proyectos donde sea dueño O colaborador
-        return projectRepository.findByOwnerIdOrCollaboratorIdsContaining(userId, userId);
+        // Buscamos proyectos donde sea dueño O colaborador O funcionario asignado
+        return projectRepository.findByOwnerIdOrCollaboratorIdsContainingOrAssignedOfficialId(userId, userId, userId);
     }
 
     public List<Project> getAllProjects() {
