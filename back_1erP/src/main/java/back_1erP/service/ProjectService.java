@@ -20,6 +20,10 @@ public class ProjectService {
         return projectRepository.findByOwnerIdOrCollaboratorIdsContaining(userId, userId);
     }
 
+    public List<Project> getAllProjects() {
+        return projectRepository.findAll();
+    }
+
     public Optional<Project> getProjectById(String id) {
         return projectRepository.findById(id);
     }
@@ -41,8 +45,8 @@ public class ProjectService {
 
         // Verificación de seguridad: dueño o colaborador pueden editar
         boolean isOwner = existingProject.getOwnerId().equals(userId);
-        boolean isCollaborator = existingProject.getCollaboratorIds() != null && 
-                               existingProject.getCollaboratorIds().contains(userId);
+        boolean isCollaborator = existingProject.getCollaboratorIds() != null &&
+                existingProject.getCollaboratorIds().contains(userId);
 
         if (!isOwner && !isCollaborator) {
             throw new RuntimeException("No tienes permisos para editar este proyecto");
@@ -87,6 +91,16 @@ public class ProjectService {
             project.setCollaboratorIds(new ArrayList<>());
         }
         project.getCollaboratorIds().add(userId);
+
+        return projectRepository.save(project);
+    }
+
+    public Project assignToOfficial(String projectId, String userId, String username) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Proyecto no encontrado"));
+
+        project.setAssignedOfficialId(userId);
+        project.setAssignedOfficialName(username);
 
         return projectRepository.save(project);
     }
