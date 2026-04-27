@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 
 @Service
@@ -19,7 +20,8 @@ import java.util.Random;
 public class ProcessService {
     private final ProcessRepository processRepository;
     private final ProjectRepository projectRepository;
-    private final ObjectMapper objectMapper;
+    private final NotificationService notificationService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public ProcessInstance startProcess(String projectId, String initiatorId, String initiatorName) throws Exception {
         Project project = projectRepository.findById(projectId)
@@ -50,8 +52,17 @@ public class ProcessService {
         log.setAction("STARTED");
         log.setTimestamp(LocalDateTime.now());
         instance.getHistory().add(log);
+        ProcessInstance saved = processRepository.save(instance);
 
-        return processRepository.save(instance);
+        // Notificar a los dispositivos móviles suscritos
+        String nextLabel = instance.getStatus().equals("COMPLETED") ? "Finalizado" : instance.getCurrentLaneName();
+        notificationService.sendPushNotification(
+            instance.getFcmTokens(), 
+            "Actualización de Trámite", 
+            "Tu trámite ha avanzado a: " + nextLabel
+        );
+
+        return saved;
     }
 
     public ProcessInstance advanceProcess(String instanceId, String userId, String userName, Map<String, Object> submittedData) throws Exception {
@@ -84,11 +95,26 @@ public class ProcessService {
             instance.setStatus("COMPLETED");
             instance.setEndDate(LocalDateTime.now());
             instance.setCurrentNodeId(nextNodeId);
+            instance.setCurrentLaneName("Finalizado");
         } else {
             instance.setCurrentNodeId(nextNodeId);
+            // Opcional: Actualizar carril si el nodo cambió de carril
         }
 
-        return processRepository.save(instance);
+        ProcessInstance saved = processRepository.save(instance);
+
+        // Notificar a los dispositivos móviles
+        String body = instance.getStatus().equals("COMPLETED") 
+            ? "¡Tu trámite ha finalizado con éxito!" 
+            : "Tu trámite ha avanzado a un nuevo paso.";
+            
+        notificationService.sendPushNotification(
+            instance.getFcmTokens(),
+            "Actualización de Trámite",
+            body
+        );
+
+        return saved;
     }
 
     public List<ProcessInstance> getInstancesByInitiator(String userId) {
@@ -185,5 +211,18 @@ public class ProcessService {
             }
         }
         return false;
+    }
+    public Optional<ProcessInstance> getProcessByTrackingCode(String code) {
+        return processRepository.findByTrackingCode(code);
+    }
+
+    public boolean addFcmTokenToProcess(String code, String token) {
+        return processRepository.findByTrackingCode(code).map(instance -> {
+            if (!instance.getFcmTokens().contains(token)) {
+                instance.getFcmTokens().add(token);
+                processRepository.save(instance);
+            }
+            return true;
+        }).orElse(false);
     }
 }

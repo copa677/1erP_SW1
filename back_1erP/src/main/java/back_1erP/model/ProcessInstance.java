@@ -22,6 +22,7 @@ public class ProcessInstance {
     private String initiatorName;
     private String currentNodeId;
     private String currentLaneName;
+    private List<String> fcmTokens = new ArrayList<>();
     
     private LocalDateTime startDate;
     private LocalDateTime endDate;
