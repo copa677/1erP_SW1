@@ -23,7 +23,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Endpoint de conexión para el frontend
         registry.addEndpoint("/ws-uml")
-                .setAllowedOrigins("http://localhost:4200") // URL del frontend
+                .setAllowedOriginPatterns("*")
                 .withSockJS(); // Soporte para fallback si WebSocket falla
     }
 }
