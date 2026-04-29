@@ -128,7 +128,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
       interactive: true,
       cellViewNamespace: { ...joint.shapes, ...UMLShapes },
       linkPinning: false,
-      defaultRouter: { name: 'manhattan', args: { padding: 20 } },
+      defaultRouter: { name: 'orthogonal', args: { padding: 20 } },
       defaultConnector: { name: 'rounded' },
       validateConnection: (cellViewS, magnetS, cellViewT, magnetT) => {
         return !!magnetT && magnetS !== magnetT;
@@ -253,11 +253,23 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
       if (cell.get('isSwimlane')) return;
       const parent = cell.getParentCell();
       if (parent && !parent.get('isSwimlane')) return;
+      
       const area = cell.getBBox();
       const lanes = this.diagramService.graph.getCells().filter(c => c.get('isSwimlane')) as joint.shapes.standard.Rectangle[];
-      const targetLane = lanes.find(l => l.getBBox().containsRect(area));
+      
+      // Priorizar el carril actual si la celda aún está dentro de él (evita que otros carriles "roben" elementos al chocar)
+      let targetLane = null;
+      if (parent && parent.get('isSwimlane') && parent.getBBox().containsRect(area)) {
+        targetLane = parent;
+      } else {
+        targetLane = lanes.find(l => l.getBBox().containsRect(area));
+      }
+
       if (targetLane) {
-        if (cell.getParentCell() !== targetLane) targetLane.embed(cell);
+        if (parent !== targetLane) {
+          if (parent) parent.unembed(cell); // CRÍTICO: Desvincular del padre anterior antes de anidar en uno nuevo
+          targetLane.embed(cell);
+        }
       } else if (parent && parent.get('isSwimlane')) {
         parent.unembed(cell);
       }

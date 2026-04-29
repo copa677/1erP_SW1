@@ -31,8 +31,8 @@ export class AIService {
           const cleanJson = response.commands.replace(/```json|```/g, '').trim();
           commands = JSON.parse(cleanJson);
         } catch (e) {
-          console.error('Error parseando comandos de IA (String):', e);
-          return { error: 'La IA devolvió un formato de texto inválido' };
+          // Si no es un JSON válido, asumimos que es una respuesta de texto (como sugerencias)
+          return { success: true, isMessage: true, message: response.commands };
         }
       } else {
         console.error('Formato de comandos inesperado:', response.commands);
@@ -43,6 +43,21 @@ export class AIService {
       return { success: true, count: commands.length };
     } catch (error) {
       console.error('Error llamando a la IA:', error);
+      throw error;
+    }
+  }
+
+  async analyzeFlow(history: any[] = []) {
+    const state = {
+      cells: this.diagramService.graph.getCells().map(c => c.toJSON())
+    };
+
+    try {
+      return await firstValueFrom(
+        this.http.post(`${this.apiUrl}/api/v1/analyzer/analyze`, { state, history })
+      );
+    } catch (error) {
+      console.error('Error analizando el flujo:', error);
       throw error;
     }
   }
@@ -58,25 +73,62 @@ export class AIService {
 
         case 'CREATE_NODE':
           const newNode = this.diagramService.addElement(cmd.type, cmd.x, cmd.y, cmd.name);
-          
+
           // Vincular a carril si se especifica
           if (newNode && cmd.laneId) {
-            // Buscamos el carril por nombre
-            const lane = this.diagramService.graph.getElements().find(el => 
-              el.get('isSwimlane') && el.attr('label/text') === cmd.laneId
-            );
-            if (lane) {
-              lane.embed(newNode);
-            }
+            this.embedInLane(newNode, cmd.laneId);
           }
           break;
+
+        case 'CREATE_FORM': {
+          const formNode = this.diagramService.addElement('activity', cmd.x, cmd.y, cmd.name);
+          if (formNode) {
+            formNode.set('actionType', 'form');
+            formNode.set('formFields', cmd.fields || []);
+            // Estilo visual de formulario
+            formNode.attr('body/stroke', '#10b981');
+            formNode.attr('body/strokeWidth', 4);
+            
+            if (cmd.laneId) this.embedInLane(formNode, cmd.laneId);
+          }
+          break;
+        }
+
+        case 'ADD_FIELD': {
+          const target = this.findCell(cmd.nodeId);
+          if (target) {
+            const currentFields = target.get('formFields') || [];
+            target.set('formFields', [...currentFields, cmd.field]);
+            target.set('actionType', 'form'); // Asegurar que sea tipo form
+            target.attr('body/stroke', '#10b981');
+            target.attr('body/strokeWidth', 4);
+          }
+          break;
+        }
+
+        case 'SET_FORM': {
+          const target = this.findCell(cmd.nodeId);
+          if (target) {
+            target.set('formFields', cmd.fields || []);
+            target.set('actionType', 'form');
+            target.attr('body/stroke', '#10b981');
+            target.attr('body/strokeWidth', 4);
+          }
+          break;
+        }
 
         case 'CONNECT': {
           // La IA suele enviar IDs o nombres. Intentamos buscar por ambos.
           const source = this.findCell(cmd.from);
           const target = this.findCell(cmd.to);
           if (source && target) {
-            this.diagramService.addLink(source.id.toString(), target.id.toString(), cmd.label);
+            this.diagramService.addLink(
+              source.id.toString(), 
+              target.id.toString(), 
+              cmd.label,
+              cmd.fromPort,
+              cmd.toPort
+            );
           }
           break;
         }
@@ -113,8 +165,17 @@ export class AIService {
 
   // Utilidad para buscar celdas por ID o por Nombre (Label)
   private findCell(identifier: string) {
-    return this.diagramService.graph.getCells().find(c => 
+    return this.diagramService.graph.getCells().find(c =>
       c.id === identifier || c.attr('label/text') === identifier
     );
+  }
+
+  private embedInLane(element: joint.dia.Element, laneName: string) {
+    const lane = this.diagramService.graph.getElements().find(el =>
+      el.get('isSwimlane') && el.attr('label/text') === laneName
+    );
+    if (lane) {
+      lane.embed(element);
+    }
   }
 }

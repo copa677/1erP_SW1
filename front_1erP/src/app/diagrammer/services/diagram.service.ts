@@ -32,10 +32,59 @@ export class DiagramService {
 
     this.graph.on('remove', (cell, collection, opt) => {
       if (!opt.remote) {
-        // Para eliminación, solo necesitamos el ID. Es más seguro que toJSON() en un objeto ya eliminado.
         this.graphChange$.next({ type: 'REMOVE', cell: { id: cell.id } });
       }
     });
+
+    // Escuchar cambios en el texto para auto-redimensionar
+    this.graph.on('change:attrs', (cell: joint.dia.Cell, attrs: any, opt: any) => {
+      if (opt.remote) return;
+      if (cell.isElement()) {
+        this.fitElementToText(cell as joint.dia.Element);
+      }
+    });
+  }
+
+  private fitElementToText(element: joint.dia.Element) {
+    const text = element.attr('label/text');
+    if (!text || element.get('isSwimlane')) return;
+
+    // Solo actuar si el texto es lo suficientemente largo para posiblemente necesitar wrap
+    const padding = 20;
+    const currentSize = element.size();
+    
+    // Aplicar textWrap base para que JointJS sepa cómo romper las líneas
+    element.attr('label/textWrap', {
+      width: '90%', // Mantener margen lateral
+      height: null, // Sin límite de altura para el wrap
+      ellipsis: false
+    }, { silent: true }); // Usar silent para no disparar este evento recursivamente
+
+    // Usamos un pequeño timeout para medir el BBox real después de que JointJS renderice el wrap
+    // En un entorno profesional se usaría el motor de métricas de JointJS, pero esto es más robusto para SVG
+    setTimeout(() => {
+        const view = element.findView(this.paper);
+        if (!view) return;
+        
+        const labelSelector = (view as any).selectors.label;
+        if (!labelSelector) return;
+        
+        const textBBox = (view as any).getBBoxOfElement(labelSelector);
+        
+        const minHeight = element.get('type') === 'decision' ? 60 : 60;
+        const minWidth = element.get('type') === 'decision' ? 60 : 150;
+        
+        const calculatedHeight = Math.max(minHeight, textBBox.height + padding * 2);
+        const calculatedWidth = Math.max(minWidth, textBBox.width + padding * 2);
+
+        // Si el elemento es un rombo (decision), necesitamos un margen extra para que el texto no toque las esquinas
+        const finalHeight = element.get('type') === 'decision' ? calculatedHeight + 20 : calculatedHeight;
+        const finalWidth = element.get('type') === 'decision' ? calculatedWidth + 40 : calculatedWidth;
+
+        if (Math.abs(finalHeight - currentSize.height) > 5 || Math.abs(finalWidth - currentSize.width) > 5) {
+            element.resize(finalWidth, finalHeight);
+        }
+    }, 50);
   }
 
   public selectCell(cell: joint.dia.Cell | null) {
@@ -105,7 +154,12 @@ export class DiagramService {
         element.resize(100, 40);
         element.attr({
           body: { fill: 'transparent', stroke: 'none' },
-          label: { text: 'Nuevo Texto', fill: '#1e293b', fontSize: 16 }
+          label: { 
+            text: 'Nuevo Texto', 
+            fill: '#1e293b', 
+            fontSize: 16,
+            textWrap: { width: '90%', height: null }
+          }
         });
         // No añadimos puertos para el texto
         break;
@@ -115,7 +169,11 @@ export class DiagramService {
           size: { width: 150, height: 60 },
           attrs: {
             body: { fill: '#ffffff', stroke: '#3b82f6', strokeWidth: 2, rx: 10, ry: 10 },
-            label: { text: name || 'Actividad', fill: '#1e293b' }
+            label: { 
+                text: name || 'Actividad', 
+                fill: '#1e293b',
+                textWrap: { width: '90%', height: null }
+            }
           }
         });
         break;
@@ -128,7 +186,11 @@ export class DiagramService {
               refPoints: '0,10 10,0 20,10 10,20',
               fill: '#ffffff', stroke: '#f59e0b', strokeWidth: 2 
             },
-            label: { text: name || '¿?', fill: '#1e293b' }
+            label: { 
+                text: name || '¿?', 
+                fill: '#1e293b',
+                textWrap: { width: '70%', height: null } // Menos ancho para rombos
+            }
           }
         });
         break;
@@ -137,14 +199,18 @@ export class DiagramService {
           ...commonProps,
           size: { width: 30, height: 30 },
           attrs: {
-            body: { fill: '#1e293b', stroke: 'none' }
+            body: { fill: '#1e293b', stroke: 'none' },
+            label: { text: name || '', display: 'none' } // Hidden label for IA reference
           }
         });
         break;
       case 'final':
         element = new UMLShapes.uml.FinalNode({
             ...commonProps,
-            size: { width: 30, height: 30 }
+            size: { width: 30, height: 30 },
+            attrs: {
+              label: { text: name || '', display: 'none' } // Hidden label for IA reference
+            }
         });
         break;
       case 'fork':
@@ -209,10 +275,16 @@ export class DiagramService {
     return element;
   }
 
-  public addLink(sourceId: string, targetId: string, label: string = '') {
+  public addLink(sourceId: string, targetId: string, label: string = '', sourcePort?: string, targetPort?: string) {
     const link = new joint.shapes.standard.Link({
-      source: { id: sourceId },
-      target: { id: targetId },
+      source: { 
+        id: sourceId,
+        ...(sourcePort ? { port: sourcePort, magnet: 'circle' } : {})
+      },
+      target: { 
+        id: targetId,
+        ...(targetPort ? { port: targetPort, magnet: 'circle' } : {})
+      },
       attrs: {
         line: { stroke: '#64748b', strokeWidth: 2, targetMarker: { 'type': 'path', 'd': 'M 10 -5 0 0 10 5 Z' } }
       }

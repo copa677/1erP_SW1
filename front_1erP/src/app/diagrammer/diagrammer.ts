@@ -12,11 +12,13 @@ import { CollaborationService } from '../services/collaboration.service';
 import { Subscription } from 'rxjs';
 import { SpeechService } from './services/speech.service';
 import { AIService } from './services/ai.service';
+import { AnalysisResultComponent } from './components/analysis-result/analysis-result';
+import { WorkflowService } from '../services/workflow.service';
 
 @Component({
   selector: 'app-diagrammer',
   standalone: true,
-  imports: [CommonModule, ToolbarComponent, CanvasComponent, PropertiesComponent, RouterModule],
+  imports: [CommonModule, ToolbarComponent, CanvasComponent, PropertiesComponent, RouterModule, AnalysisResultComponent],
   templateUrl: './diagrammer.html',
   styleUrl: './diagrammer.css'
 })
@@ -29,6 +31,7 @@ export class DiagrammerComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private speechService = inject(SpeechService);
   private aiService = inject(AIService);
+  private workflowService = inject(WorkflowService);
 
   private subscriptions: Subscription = new Subscription();
   currentProject?: Project;
@@ -38,6 +41,8 @@ export class DiagrammerComponent implements OnInit, OnDestroy {
   public isAIPanelOpen = false;
   public aiResponse: string = '';
   public isListening = false;
+  public analysisResult: any = null;
+  public isAnalyzing = false;
 
   ngOnInit() {
     this.route.params.subscribe(params => {
@@ -202,7 +207,11 @@ export class DiagrammerComponent implements OnInit, OnDestroy {
     try {
       const result = await this.aiService.sendPrompt(text);
       if (result.success) {
-        this.aiResponse = `IA: He ejecutado ${result.count} acciones en el diagrama.`;
+        if (result.isMessage) {
+          this.aiResponse = `IA: ${result.message}`;
+        } else {
+          this.aiResponse = `IA: He ejecutado ${result.count} acciones en el diagrama.`;
+        }
       } else {
         this.aiResponse = `IA: ${result.error || 'No pude entender el comando.'}`;
       }
@@ -210,6 +219,68 @@ export class DiagrammerComponent implements OnInit, OnDestroy {
       this.aiResponse = `Error de IA: ${err.message || 'Error desconocido'}`;
       console.error('AI Error:', err);
     }
+  }
+
+  async getAISuggestions() {
+    this.aiResponse = 'Analizando el diagrama y generando sugerencias...';
+    
+    const data = this.diagramService.exportJSON();
+    const elementCount = data.cells ? data.cells.length : 0;
+    
+    const prompt = `Analiza este diagrama UML que actualmente tiene ${elementCount} elementos. Actúa como un experto en arquitectura de software. Dime 2 sugerencias breves de qué podría faltar o qué se podría mejorar. No intentes generar comandos JSON para modificar el diagrama, solo devuélveme texto plano con las sugerencias.`;
+    
+    try {
+      const result = await this.aiService.sendPrompt(prompt);
+      if (result.success) {
+        if (result.isMessage) {
+          this.aiResponse = `Sugerencias: ${result.message}`;
+        } else {
+          this.aiResponse = `Sugerencias procesadas (se aplicaron ${result.count} cambios sugeridos).`;
+        }
+      } else {
+        this.aiResponse = `IA: ${result.error || 'No pude generar sugerencias.'}`;
+      }
+    } catch (err: any) {
+      this.aiResponse = `Error de IA: ${err.message || 'Error desconocido'}`;
+      console.error('AI Error:', err);
+    }
+  }
+
+  async runAnalysis() {
+    if (!this.currentProject?.id) return;
+    
+    this.isAnalyzing = true;
+    this.notificationService.info('Iniciando análisis profundo del flujo...');
+    
+    // 1. Obtener historial si existe
+    this.workflowService.getMyProcesses().subscribe({
+      next: async (processes) => {
+        // Buscamos instancias de este proyecto para analizar cuellos de botella
+        const instances = processes.filter(p => p.projectId === this.currentProject?.id);
+        const historyData = instances.flatMap(i => i.history);
+
+        try {
+          const result = await this.aiService.analyzeFlow(historyData);
+          this.analysisResult = result;
+          this.notificationService.success('Análisis completado');
+        } catch (err) {
+          this.notificationService.error('Error al realizar el análisis');
+        } finally {
+          this.isAnalyzing = false;
+        }
+      },
+      error: async () => {
+        // Si falla la carga de procesos, analizamos solo estructura
+        try {
+          const result = await this.aiService.analyzeFlow([]);
+          this.analysisResult = result;
+        } catch (err) {
+          this.notificationService.error('Error en el análisis');
+        } finally {
+          this.isAnalyzing = false;
+        }
+      }
+    });
   }
 
   private loadProject(updatedProject: Project) {

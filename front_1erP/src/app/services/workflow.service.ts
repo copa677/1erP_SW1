@@ -2,13 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ProcessInstance } from '../interfaces/process.interface';
+import { environment } from '../config/env';
 
 @Injectable({
   providedIn: 'root'
 })
 export class WorkflowService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:8080/api/process';
+  private apiUrl = `${environment.apiUrl}/process`;
 
   startProcess(projectId: string): Observable<ProcessInstance> {
     return this.http.post<ProcessInstance>(`${this.apiUrl}/start/${projectId}`, {});

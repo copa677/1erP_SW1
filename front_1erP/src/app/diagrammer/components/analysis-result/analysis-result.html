@@ -1,0 +1,40 @@
+<div class="analysis-container" *ngIf="result()">
+  <div class="analysis-header">
+    <h3><i class="fas fa-brain"></i> Informe de Inteligencia Artificial</h3>
+    <div class="score-badge" [style.background-color]="getScoreColor(result().score)">
+      Score: {{ result().score }}
+    </div>
+    <button class="close-btn" (click)="close.emit()">×</button>
+  </div>
+
+  <div class="analysis-content">
+    <div class="summary-section">
+      <p>{{ result().summary }}</p>
+    </div>
+
+    <!-- Problemas Estructurales -->
+    <div class="section" *ngIf="result().issues?.length">
+      <h4><i class="fas fa-exclamation-triangle"></i> Hallazgos y Mejoras</h4>
+      <div class="issue-card" *ngFor="let issue of result().issues" [ngClass]="issue.type">
+        <div class="issue-main">
+          <span class="badge">{{ issue.type | uppercase }}</span>
+          <strong>{{ issue.message }}</strong>
+        </div>
+        <div class="suggestion" *ngIf="issue.suggestion">
+          <i class="fas fa-lightbulb"></i> {{ issue.suggestion }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Cuellos de Botella -->
+    <div class="section" *ngIf="result().bottlenecks?.length">
+      <h4><i class="fas fa-hourglass-half"></i> Cuellos de Botella Detectados</h4>
+      <div class="bottleneck-card" *ngFor="let b of result().bottlenecks" [ngClass]="b.severity">
+        <div class="bottleneck-main">
+          <span class="severity">Severidad {{ b.severity | titlecase }}</span>
+          <p>{{ b.reason }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
