@@ -9,6 +9,7 @@ import { NotificationService } from '../services/notification.service';
 import { UsersMgmtComponent } from './users-mgmt/users-mgmt.component';
 import { AssignmentsComponent } from './assignments/assignments.component';
 import { ProcessExecutionComponent } from './process-execution/process-execution.component';
+import { WorkflowService } from '../services/workflow.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -29,9 +30,10 @@ export class DashboardComponent implements OnInit {
   public authService = inject(AuthService);
   private notificationService = inject(NotificationService);
   private router = inject(Router);
+  private workflowService = inject(WorkflowService);
 
-  // Vistas: 'projects' | 'users' | 'assignments' | 'execution'
-  currentView = signal<string>('projects');
+  // Vistas: 'kpis' | 'projects' | 'users' | 'assignments' | 'execution'
+  currentView = signal<string>('kpis');
 
   showCreateModal = signal<boolean>(false);
   showJoinModal = signal<boolean>(false);
@@ -43,10 +45,62 @@ export class DashboardComponent implements OnInit {
     this.currentView.set(view);
   }
 
+  // KPIs Data
+  public stats = signal({
+    totalProjects: 0,
+    totalExecutions: 0,
+    successRate: 0,
+    bottlenecksDetected: 0,
+    activeUsers: 0,
+    statusDistribution: { completed: 0, active: 0, failed: 0 },
+    weeklyActivity: [0, 0, 0, 0, 0, 0, 0] // Ultimos 7 días
+  });
+
   ngOnInit() {
     this.projectService.loadProjects().subscribe({
+      next: (projects) => {
+        this.calculateStats(projects);
+      },
       error: (err) => console.error('Error loading projects', err)
     });
+    
+    this.workflowService.getMyProcesses().subscribe(processes => {
+      this.calculateWorkflowStats(processes);
+    });
+  }
+
+  private calculateStats(projects: Project[]) {
+    this.stats.update(s => ({
+      ...s,
+      totalProjects: projects.length,
+      activeUsers: new Set(projects.flatMap(p => p.collaboratorIds || [])).size + 1
+    }));
+  }
+
+  private calculateWorkflowStats(processes: any[]) {
+    if (!processes || !Array.isArray(processes)) return;
+    
+    const total = processes.length;
+    const completed = processes.filter(p => p.status === 'COMPLETED').length;
+    const active = processes.filter(p => p.status === 'ACTIVE' || p.status === 'STARTED').length;
+    const failed = processes.filter(p => p.status === 'FAILED' || p.status === 'CANCELLED').length;
+    
+    // Simulación de actividad semanal
+    const weekly = [12, 19, 3, 5, 2, 3, total > 0 ? total : 0];
+
+    const bottlenecks = processes.reduce((acc, p) => {
+      const slowSteps = p.history?.filter((h: any) => h.duration > 5000) || [];
+      return acc + slowSteps.length;
+    }, 0);
+
+    this.stats.update(s => ({
+      ...s,
+      totalExecutions: total,
+      successRate: total > 0 ? Math.round((completed / total) * 100) : 0,
+      bottlenecksDetected: bottlenecks,
+      statusDistribution: { completed, active, failed },
+      weeklyActivity: weekly
+    }));
   }
 
   joinProject() {

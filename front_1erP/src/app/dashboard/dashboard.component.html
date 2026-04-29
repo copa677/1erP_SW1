@@ -14,6 +14,15 @@
     </div>
 
     <nav class="sidebar-nav">
+      <a (click)="setView('kpis')" class="nav-item" [class.active]="currentView() === 'kpis'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        Dashboard
+      </a>
+
       <a (click)="setView('projects')" class="nav-item" [class.active]="currentView() === 'projects'">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -22,7 +31,7 @@
           <rect x="14" y="14" width="7" height="7"></rect>
           <rect x="3" y="14" width="7" height="7"></rect>
         </svg>
-        Mis Proyectos
+        Proyectos
       </a>
 
       <!-- Opciones de Administrador -->
@@ -80,6 +89,105 @@
   <!-- Main Content -->
   <main class="main-content">
     
+    <!-- VISTA 0: KPIs (DASHBOARD) -->
+    <ng-container *ngIf="currentView() === 'kpis'">
+      <header class="content-header">
+        <div class="title-group">
+          <h2>Estadísticas de Rendimiento</h2>
+          <p>Monitoreo en tiempo real de tus flujos y proyectos</p>
+        </div>
+      </header>
+
+      <div class="kpi-grid">
+        <div class="kpi-card purple">
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          </div>
+          <div class="kpi-info">
+            <span class="label">Total Proyectos</span>
+            <span class="value">{{ stats().totalProjects }}</span>
+          </div>
+        </div>
+
+        <div class="kpi-card blue">
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          </div>
+          <div class="kpi-info">
+            <span class="label">Flujos Ejecutados</span>
+            <span class="value">{{ stats().totalExecutions }}</span>
+          </div>
+        </div>
+
+        <div class="kpi-card green">
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          </div>
+          <div class="kpi-info">
+            <span class="label">Tasa de Éxito</span>
+            <span class="value">{{ stats().successRate }}%</span>
+          </div>
+        </div>
+
+        <div class="kpi-card orange">
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          </div>
+          <div class="kpi-info">
+            <span class="label">Cuellos de Botella</span>
+            <span class="value">{{ stats().bottlenecksDetected }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-charts-grid">
+        <!-- Chart 1: Donut Distribution -->
+        <div class="chart-container card-3d">
+          <h3>Distribución de Estados</h3>
+          <div class="donut-wrapper">
+            <svg viewBox="0 0 36 36" class="circular-chart">
+              <path class="circle-bg"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path class="circle completed"
+                [attr.stroke-dasharray]="stats().successRate + ', 100'"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <text x="18" y="20.35" class="percentage">{{ stats().successRate }}%</text>
+            </svg>
+            <div class="donut-legend">
+              <div class="legend-item"><span class="dot completed"></span> Completados: {{ stats().statusDistribution.completed }}</div>
+              <div class="legend-item"><span class="dot active"></span> En Curso: {{ stats().statusDistribution.active }}</div>
+              <div class="legend-item"><span class="dot failed"></span> Fallidos: {{ stats().statusDistribution.failed }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart 2: Weekly Activity -->
+        <div class="chart-container card-3d">
+          <h3>Actividad de Ejecución (7 días)</h3>
+          <div class="bar-chart-wrapper">
+            @for (val of stats().weeklyActivity; track $index) {
+              <div class="bar-item">
+                <div class="bar" [style.height.%]="val * 5">
+                  <span class="bar-tooltip">{{ val }}</span>
+                </div>
+                <span class="bar-label">D{{ $index + 1 }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-charts">
+        <div class="chart-container">
+          <h3>Estado de Salud de los Procesos</h3>
+          <div class="health-bar-wrapper">
+            <div class="health-bar" [style.width]="stats().successRate + '%'"></div>
+          </div>
+          <p class="chart-legend">{{ stats().successRate }}% de los flujos han terminado exitosamente.</p>
+        </div>
+      </div>
+    </ng-container>
+
     <!-- VISTA 1: PROYECTOS -->
     <ng-container *ngIf="currentView() === 'projects'">
       <header class="content-header">

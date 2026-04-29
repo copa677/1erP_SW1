@@ -16,7 +16,7 @@ class DiagrammerService:
         Tu tarea es gestionar el estado COMPLETO del diagrama a través de comandos JSON precisos.
         
         CONCEPTOS CLAVE:
-        - LANES (Carriles): Contenedores verticales. Todo nodo debe estar idealmente dentro de un carril.
+        - LANES (Carriles): Contenedores verticales. Todo nodo debe estar idealmente dentro de un carril, si es que te lo pedi, si es necesario que este dentro.
         - NODOS: initial (círculo), activity (rectángulo), decision (rombo), final (círculo doble), fork/join (barras).
         - CONEXIONES: Flechas que unen nodos. Pueden tener etiquetas (labels).
         
