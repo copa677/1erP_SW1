@@ -14,6 +14,7 @@ import { SpeechService } from './services/speech.service';
 import { AIService } from './services/ai.service';
 import { AnalysisResultComponent } from './components/analysis-result/analysis-result';
 import { WorkflowService } from '../services/workflow.service';
+import { OnboardingService } from '../services/onboarding.service';
 
 @Component({
   selector: 'app-diagrammer',
@@ -32,6 +33,7 @@ export class DiagrammerComponent implements OnInit, OnDestroy {
   private speechService = inject(SpeechService);
   private aiService = inject(AIService);
   private workflowService = inject(WorkflowService);
+  private onboardingService = inject(OnboardingService);
 
   private subscriptions: Subscription = new Subscription();
   currentProject?: Project;
@@ -45,6 +47,7 @@ export class DiagrammerComponent implements OnInit, OnDestroy {
   public isAnalyzing = false;
 
   ngOnInit() {
+    this.onboardingService.startEditorTour();
     this.route.params.subscribe(params => {
       const id = params['id'];
       this.diagramService.currentProjectId = id; // Guardar ID global

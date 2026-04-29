@@ -10,6 +10,7 @@ import { UsersMgmtComponent } from './users-mgmt/users-mgmt.component';
 import { AssignmentsComponent } from './assignments/assignments.component';
 import { ProcessExecutionComponent } from './process-execution/process-execution.component';
 import { WorkflowService } from '../services/workflow.service';
+import { OnboardingService } from '../services/onboarding.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -31,6 +32,7 @@ export class DashboardComponent implements OnInit {
   private notificationService = inject(NotificationService);
   private router = inject(Router);
   private workflowService = inject(WorkflowService);
+  private onboardingService = inject(OnboardingService);
 
   // Vistas: 'kpis' | 'projects' | 'users' | 'assignments' | 'execution'
   currentView = signal<string>('kpis');
@@ -57,6 +59,11 @@ export class DashboardComponent implements OnInit {
   });
 
   ngOnInit() {
+    this.loadStats();
+    this.onboardingService.startTour();
+  }
+
+  private loadStats() {
     this.projectService.loadProjects().subscribe({
       next: (projects) => {
         this.calculateStats(projects);

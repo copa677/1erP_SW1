@@ -1,1 +1,9 @@
 /* You can add global styles to this file, and also import other style files */
+@import 'driver.js/dist/driver.css';
+
+/* Custom Driver.js Styles */
+.driver-popover { border-radius: 1.25rem !important; padding: 1.5rem !important; border: none !important; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important; }
+.driver-popover-title { font-size: 1.25rem !important; font-weight: 700 !important; color: #1e293b !important; }
+.driver-popover-description { font-size: 1rem !important; color: #64748b !important; margin-top: 0.5rem !important; }
+.driver-popover-next-btn { background: #3b82f6 !important; text-shadow: none !important; border: none !important; padding: 8px 16px !important; border-radius: 8px !important; }
+.driver-popover-prev-btn { color: #64748b !important; border: 1px solid #e2e8f0 !important; border-radius: 8px !important; }
